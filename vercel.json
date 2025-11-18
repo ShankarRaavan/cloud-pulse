@@ -10,11 +10,9 @@
       "use": "@vercel/node"
     },
     {
-      "src": "services/python-runner/build.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "services/python-runner"
-      }
+      "src": "services/python-runner/app.py",
+      "use": "@vercel/python",
+      "config": { "pip": "install --upgrade pip setuptools" }
     },
     {
       "src": "services/ai-service/src/index.js",
