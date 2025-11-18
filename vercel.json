@@ -11,8 +11,7 @@
     },
     {
       "src": "services/python-runner/app.py",
-      "use": "@vercel/python",
-      "config": { "pip": "install --upgrade pip setuptools" }
+      "use": "@vercel/python"
     },
     {
       "src": "services/ai-service/src/index.js",
