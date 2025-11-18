@@ -10,8 +10,11 @@
       "use": "@vercel/node"
     },
     {
-      "src": "services/python-runner/app.py",
-      "use": "@vercel/python"
+      "src": "services/python-runner/build.sh",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "services/python-runner"
+      }
     },
     {
       "src": "services/ai-service/src/index.js",
