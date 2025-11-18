@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install git for GitHub integration
 RUN apt-get update && \
-    apt-get install -y git && \
+    apt-get install -y git python3-distutils && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
