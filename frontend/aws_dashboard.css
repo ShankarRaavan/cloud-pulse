@@ -1,0 +1,554 @@
+.main-title {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 2rem;
+    font-weight: 400;
+    color: #63b3ed;
+}
+
+.cloud-provider-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    justify-items: center;
+}
+
+.provider-card {
+    background-color: #2d3748;
+    border-radius: 12px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 300px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #4a5568;
+}
+
+.provider-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 32px rgba(59, 130, 246, 0.2);
+}
+
+.provider-card img {
+    height: 80px;
+    margin-bottom: 20px;
+}
+
+.provider-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.provider-card-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 0 20px;
+}
+
+.btn-primary, .btn-secondary, .btn-danger {
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.btn-secondary {
+    background-color: #4a5568;
+    color: #e2e8f0;
+}
+
+.btn-secondary:hover {
+    background-color: #2d3748;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+.btn-icon {
+    background-color: transparent;
+    border: 1px solid #4a5568;
+    color: #a0aec0;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background-color: #4a5568;
+    color: #ffffff;
+}
+
+/* Status Indicator Styles */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 15px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-dot.connected {
+    background-color: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.status-dot.disconnected {
+    background-color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.provider-details {
+    background-color: #1a202c;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border: 1px solid #4a5568;
+}
+
+.provider-details p {
+    margin: 5px 0;
+    font-size: 0.875rem;
+    color: #e2e8f0;
+}
+
+.provider-details strong {
+    color: #63b3ed;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+    background-color: #2d3748;
+    margin: 10% auto;
+    padding: 30px;
+    border: 1px solid #4a5568;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    position: relative;
+}
+
+.close-btn {
+    color: #a0aec0;
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: #ffffff;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #a0aec0;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    background-color: #1a202c;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    color: #e2e8f0;
+}
+
+.error-message {
+    color: #ef4444;
+    margin-top: 15px;
+    height: 20px;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Custom Dropdown Styles */
+.subscription-container {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.custom-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: #1a202c;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.dropdown-header:hover {
+    border-color: #3b82f6;
+    background-color: #2d3748;
+}
+
+.dropdown-header.active {
+    border-color: #3b82f6;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.dropdown-arrow {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s;
+}
+
+.dropdown-header.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #1a202c;
+    border: 1px solid #3b82f6;
+    border-top: none;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid #374151;
+}
+
+.dropdown-item:hover {
+    background-color: #374151;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.select-all-item {
+    background-color: #2d3748;
+    border-bottom: 1px solid #4a5568;
+}
+
+.select-all-item:hover {
+    background-color: #4a5568;
+}
+
+.select-all-item .subscription-checkbox-label {
+    min-height: 36px;
+    padding: 8px 12px;
+}
+
+.select-all-item .subscription-text {
+    font-weight: 500;
+    color: #60a5fa;
+    font-size: 0.875rem;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background-color: #4a5568;
+    margin: 4px 0;
+}
+
+/* Subscription Item Styles - Compact like Week dropdown */
+.subscription-item {
+    padding: 0 !important;
+    border-bottom: 1px solid #374151;
+}
+
+.subscription-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 8px 8px 12px;
+    cursor: pointer;
+    width: 100%;
+    margin: 0;
+    transition: background-color 0.2s;
+    min-height: 36px;
+    position: relative;
+}
+
+.subscription-checkbox-label:hover {
+    background-color: #374151;
+}
+
+.subscription-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.subscription-checkmark {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 14px;
+    width: 14px;
+    background-color: transparent;
+    border: 1.5px solid #6b7280;
+    border-radius: 3px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.subscription-checkbox-label:hover .subscription-checkmark {
+    border-color: #3b82f6;
+}
+
+.subscription-checkbox:checked ~ .subscription-checkmark {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.subscription-checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 3.5px;
+    top: 1px;
+    width: 3px;
+    height: 6px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.subscription-checkbox:checked ~ .subscription-checkmark:after {
+    display: block;
+}
+
+.subscription-text {
+    font-weight: 400;
+    color: #e2e8f0;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.subscription-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+    margin-left: 24px;
+    gap: 1px;
+}
+
+.subscription-id {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    font-family: 'Courier New', monospace;
+    line-height: 1.2;
+}
+
+/* Custom Checkbox Styles */
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #e2e8f0;
+    user-select: none;
+    width: 100%;
+    padding: 4px 0;
+}
+
+.custom-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: relative;
+    height: 18px;
+    width: 18px;
+    background-color: #374151;
+    border: 2px solid #4a5568;
+    border-radius: 3px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.checkbox-label:hover .checkmark {
+    border-color: #3b82f6;
+    background-color: #4a5568;
+}
+
+.custom-checkbox:checked ~ .checkmark {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.custom-checkbox:checked ~ .checkmark:after {
+    display: block;
+}
+
+.label-text {
+    flex-grow: 1;
+    line-height: 1.4;
+}
+
+/* Test Connection Label Specific Styles */
+.test-connection-label {
+    margin-top: 10px;
+    padding: 8px 0;
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+.test-connection-label .checkmark {
+    height: 16px;
+    width: 16px;
+}
+
+.test-connection-label .checkmark:after {
+    left: 4px;
+    top: 1px;
+    width: 3px;
+    height: 7px;
+}
+
+/* Loading and Error States */
+.loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+/* Selected Items Display */
+.selected-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    min-height: 24px;
+    padding: 4px 0;
+}
+
+.selected-item {
+    background: linear-gradient(135deg, #3b82f6, #1e40af);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    transition: all 0.2s;
+}
+
+.selected-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+}
+
+.selected-item .remove-btn {
+    cursor: pointer;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: background-color 0.2s;
+}
+
+.selected-item .remove-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+}

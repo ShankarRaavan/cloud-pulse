@@ -1,0 +1,41 @@
+services:
+  node-service:
+    build: ./services/node-service
+    container_name: node-service
+    ports:
+      - "8080:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./services/node-service/src:/app/src
+      - ./services/node-service/package.json:/app/package.json
+      - ./frontend:/app/frontend
+      - db-data:/app/data
+
+  aws-service-js:
+    build: ./services/aws-service-js
+    container_name: aws-service-js
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+
+  python-runner:
+    build: ./services/python-runner
+    container_name: python-runner
+    ports:
+      - "5000:5000"
+
+  ai-service:
+    build: ./services/ai-service
+    container_name: ai-service
+    ports:
+      - "9000:9000"
+    env_file:
+      - .env
+    volumes:
+      - ./services/ai-service/src:/usr/src/app/src
+      - ./docs:/app/docs
+
+volumes:
+  db-data:

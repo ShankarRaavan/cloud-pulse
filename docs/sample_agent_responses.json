@@ -1,0 +1,84 @@
+{
+  "sre_assistant_response": {
+    "type": "sre",
+    "summary": "High CPU utilization detected on EC2 instance i-12345.",
+    "root_cause": "The high CPU is likely caused by a runaway process named 'billing_batch_job'. Log analysis shows it started 35 minutes ago and is consuming all available CPU cycles.",
+    "remediation_steps": [
+      "Connect to the instance using SSH or SSM.",
+      "Identify the process ID (PID) of 'billing_batch_job' using 'top' or 'ps'.",
+      "Terminate the process using 'kill -9 <PID>'.",
+      "Investigate the batch job's code for inefficiencies or bugs."
+    ],
+    "code_blocks": [
+      {
+        "title": "Find and Kill Process",
+        "language": "bash",
+        "content": "ps aux | grep billing_batch_job\nkill -9 <PID>"
+      }
+    ],
+    "ui_hints": {
+      "resource": "i-12345"
+    }
+  },
+  "monitor_creation_response": {
+    "type": "monitor_create",
+    "summary": "Creating a new monitor for high CPU utilization on production EC2 instances.",
+    "monitor_config": {
+      "name": "High CPU Utilization on Production EC2 Instances",
+      "metric": "CPUUtilization",
+      "namespace": "AWS/EC2",
+      "dimension": "InstanceId",
+      "statistic": "Average",
+      "threshold": 80,
+      "comparison_operator": "GreaterThanThreshold",
+      "period": 300,
+      "evaluation_periods": 1,
+      "notification_template": "CPU usage for instance {{resource}} has exceeded 80%.",
+      "tags": ["prod", "cpu", "critical"]
+    },
+    "ui_hints": {
+      "metric": "CPUUtilization",
+      "threshold": "80",
+      "resource": "tag:prod"
+    }
+  },
+  "automation_agent_response": {
+    "type": "automation",
+    "summary": "This automation will restart EC2 instance i-12345 if its CPU utilization remains above 90% for 10 consecutive minutes.",
+    "automation_plan": {
+      "name": "Auto-Restart EC2 i-12345 on High CPU",
+      "trigger": {
+        "type": "CloudWatch Alarm",
+        "details": "Alarm when CPUUtilization > 90% for 10 minutes on i-12345"
+      },
+      "action": {
+        "type": "AWS Lambda",
+        "function_name": "cloudpulse_restart_ec2_i-12345"
+      },
+      "requires_approval": true
+    },
+    "code_blocks": [
+      {
+        "title": "Lambda Function (Node.js)",
+        "language": "javascript",
+        "content": "const AWS = require('aws-sdk');\nconst ec2 = new AWS.EC2();\n\nexports.handler = async (event) => {\n  const instanceId = 'i-12345';\n  const params = { InstanceIds: [instanceId] };\n  try {\n    await ec2.rebootInstances(params).promise();\n    console.log(`Successfully rebooted instance ${instanceId}`);\n  } catch (error) {\n    console.error(`Failed to reboot instance ${instanceId}:`, error);\n    throw error;\n  }\n};"
+      },
+      {
+        "title": "IAM Permissions",
+        "language": "json",
+        "content": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": \"ec2:RebootInstances\",\n      \"Resource\": \"arn:aws:ec2:*:*:instance/i-12345\"\n    }\n  ]\n}"
+      }
+    ]
+  },
+  "knowledge_assistant_response": {
+    "type": "knowledge",
+    "answer": "You can check the memory usage of a Kubernetes pod using the `kubectl top pod` command. Here are the steps:\n\n1. **Ensure you have metrics-server installed.** This is required for `kubectl top` to work.\n2. **Run the command:** `kubectl top pod <pod-name> -n <namespace>`\n\nThis will show you the current CPU and memory consumption of the specified pod.",
+    "code_blocks": [
+      {
+        "title": "Check Pod Memory Usage",
+        "language": "bash",
+        "content": "kubectl top pod my-app-pod-12345 -n default"
+      }
+    ]
+  }
+}

@@ -1,0 +1,76 @@
+# Node modules (all services)
+node_modules/
+**/node_modules/
+
+# Environment variables (NEVER commit secrets!)
+.env
+**/.env
+.env.local
+.env.production
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+database.sqlite
+**/data/*.sqlite
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+**/logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker volumes (optional - keep commented if you want to track docker-compose.yml)
+# docker-compose.override.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Build outputs
+dist/
+build/
+*.tgz
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Credentials (extra safety)
+*credentials*.json
+*secrets*.json
+*.pem
+*.key
+
+# Service-specific generated files
+services/node-service/database.sqlite
+services/node-service/data/
+services/python-runner/temp/
+services/python-runner/*.log

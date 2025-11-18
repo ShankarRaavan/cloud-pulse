@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Pulse 360 - Synthetic Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="synthetic.css">
+    <style>
+
+    </style>
+</head>
+<body class="bg-gray-800 text-gray-100">
+<div class="flex h-screen">
+    <!-- Dynamic Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+    
+    <!-- Main Content -->
+    <div id="main-content" class="flex-1 ml-64 flex flex-col overflow-hidden transition-all duration-300">
+        <main class="dashboard-main flex-1 overflow-y-auto">
+            <div class="synthetic-header">
+                <h1 class="main-title center">Synthetic Monitoring</h1>
+                <div>
+                    <button id="add-monitor-btn" class="create-monitor-btn">+ Add Monitor</button>
+                </div>
+            </div>
+            <div class="monitors-table-container">
+                <table class="monitors-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Name</th>
+                            <th>URL</th>
+                            <th>Method</th>
+                            <th>Status Code</th>
+                            <th>Response Time (ms)</th>
+                            <th>4XX Errors</th>
+                            <th>5XX Errors</th>
+                            <th>Last Checked</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monitors-tbody">
+                        <tr id="loading-row">
+                            <td colspan="10" style="text-align:center; padding: 20px;">
+                                <i class="fas fa-spinner fa-spin"></i> Loading monitors...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Hidden row for charts -->
+            <div id="chart-row-container" style="display: none; margin-top: 20px;">
+                <div class="chart-container">
+                    <div class="chart-box">
+                        <h3>Response Time (ms)</h3>
+                        <canvas id="responseTimeChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h3>Status Codes</h3>
+                        <canvas id="statusCodeChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h3>Success Rate</h3>
+                        <canvas id="successRateChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h3>Data Length (bytes)</h3>
+                        <canvas id="dataLengthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+    <!-- Unified "Add Monitor" Modal -->
+    <div id="add-monitor-modal" class="modal" style="display: none;">
+        <div class="modal-content-lg">
+            <div class="modal-header">
+                <h2 id="modal-title">Add New Synthetic Monitor</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="stepper">
+                <div class="step active"><span>1</span><div>Monitor Details</div></div>
+                <div class="step"><span>2</span><div>Authentication</div></div>
+                <div class="step"><span>3</span><div>Notifications</div></div>
+                <div class="step"><span>4</span><div>Visualization</div></div>
+                <div class="step"><span>5</span><div>Summary & Actions</div></div>
+            </div>
+            <form id="add-monitor-form">
+                <div class="accordion">
+                    <!-- Step 1: Monitor Details -->
+                    <div class="accordion-item active">
+                        <div class="accordion-header">Step 1: Monitor Details</div>
+                        <div class="accordion-content" style="display: block;">
+                            <div class="form-group">
+                                <label for="monitor-name">Monitor Name</label>
+                                <input type="text" id="monitor-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="monitor-url">URL</label>
+                                <input type="url" id="monitor-url" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="monitor-method">HTTP Method</label>
+                                <select id="monitor-method">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                    <option value="PUT">PUT</option>
+                                    <option value="PATCH">PATCH</option>
+                                    <option value="DELETE">DELETE</option>
+                                    <option value="OPTIONS">OPTIONS</option>
+                                    <option value="HEAD">HEAD</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="monitor-headers">Custom Headers (JSON)</label>
+                                <textarea id="monitor-headers" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="monitor-body">Request Body (JSON)</label>
+                                <textarea id="monitor-body" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="monitor-region">Region</label>
+                                <select id="monitor-region">
+                                    <option value="Default">Default</option>
+                                    <option value="us-east-1">US-East</option>
+                                    <option value="eu-west-1">EU-West</option>
+                                    <option value="asia-pacific">Asia-Pacific</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="monitor-interval">Interval</label>
+                                <select id="monitor-interval">
+                                    <option value="60">1 minute</option>
+                                    <option value="300">5 minutes</option>
+                                    <option value="600">10 minutes</option>
+                                    <option value="1800">30 minutes</option>
+                                    <option value="3600">1 hour</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 2: Authentication -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Step 2: Authentication</div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="auth-type">Auth Type</label>
+                                <select id="auth-type">
+                                    <option value="NONE">None</option>
+                                    <option value="BASIC">Basic Auth</option>
+                                    <option value="BEARER">Bearer Token</option>
+                                    <option value="STORED_CREDENTIAL">Stored Credential</option>
+                                    <option value="PASSWORD_GRANT">Password Grant</option>
+                                    <option value="CLIENT_CREDENTIALS">Client Credentials</option>
+                                </select>
+                            </div>
+                            <!-- Dynamic fields based on auth type -->
+                            <div id="auth-fields"></div>
+                        </div>
+                    </div>
+                    <!-- Step 3: Notifications -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Step 3: Notifications</div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label style="font-size: 11px;">Notification Channels</label>
+                                
+                                <!-- Selected Channels Summary Display -->
+                                <div id="notification-channels-summary" class="notification-summary" style="display: none;">
+                                    <!-- Summary will be dynamically populated here -->
+                                </div>
+                                
+                                <button type="button" id="toggle-notification-channels" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 11px; margin-top: 6px;">
+                                    <i class="fas fa-bell"></i> Manage Channels
+                                </button>
+                                
+                                <!-- Inline Notification Channel Configuration Section -->
+                                <div id="notification-channels-inline" class="notification-channels-section" style="display: none;">
+                                    <!-- Email Channel -->
+                                    <div class="notification-channel-item">
+                                        <div class="channel-header">
+                                            <label class="notification-checkbox-label">
+                                                <input type="checkbox" id="channel-email" class="notification-channel-checkbox" value="EMAIL">
+                                                <span class="channel-icon-wrapper">
+                                                    <i class="fas fa-envelope"></i>
+                                                </span>
+                                                <span class="channel-label-text">Email</span>
+                                            </label>
+                                            <div class="channel-actions">
+                                                <button type="button" class="channel-action-btn edit-btn" data-channel="email" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="channel-action-btn delete-btn" data-channel="email" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="email-fields" class="channel-input-fields" style="display: none;">
+                                            <label for="email-addresses" class="input-label">Email Addresses (comma-separated)</label>
+                                            <input type="text" id="email-addresses" placeholder="admin@example.com, alerts@example.com" class="channel-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Slack Channel -->
+                                    <div class="notification-channel-item">
+                                        <div class="channel-header">
+                                            <label class="notification-checkbox-label">
+                                                <input type="checkbox" id="channel-slack" class="notification-channel-checkbox" value="SLACK">
+                                                <span class="channel-icon-wrapper">
+                                                    <i class="fab fa-slack"></i>
+                                                </span>
+                                                <span class="channel-label-text">Slack</span>
+                                            </label>
+                                            <div class="channel-actions">
+                                                <button type="button" class="channel-action-btn edit-btn" data-channel="slack" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="channel-action-btn delete-btn" data-channel="slack" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="slack-fields" class="channel-input-fields" style="display: none;">
+                                            <label for="slack-webhook" class="input-label">Slack Webhook URL</label>
+                                            <input type="url" id="slack-webhook" placeholder="https://hooks.slack.com/services/..." class="channel-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Microsoft Teams Channel -->
+                                    <div class="notification-channel-item">
+                                        <div class="channel-header">
+                                            <label class="notification-checkbox-label">
+                                                <input type="checkbox" id="channel-teams" class="notification-channel-checkbox" value="TEAMS">
+                                                <span class="channel-icon-wrapper">
+                                                    <i class="fab fa-microsoft"></i>
+                                                </span>
+                                                <span class="channel-label-text">Teams</span>
+                                            </label>
+                                            <div class="channel-actions">
+                                                <button type="button" class="channel-action-btn edit-btn" data-channel="teams" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="channel-action-btn delete-btn" data-channel="teams" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="teams-fields" class="channel-input-fields" style="display: none;">
+                                            <label for="teams-webhook" class="input-label">Teams Webhook URL</label>
+                                            <input type="url" id="teams-webhook" placeholder="https://outlook.office.com/webhook/..." class="channel-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Custom Webhook Channel -->
+                                    <div class="notification-channel-item">
+                                        <div class="channel-header">
+                                            <label class="notification-checkbox-label">
+                                                <input type="checkbox" id="channel-webhook" class="notification-channel-checkbox" value="WEBHOOK">
+                                                <span class="channel-icon-wrapper">
+                                                    <i class="fas fa-globe"></i>
+                                                </span>
+                                                <span class="channel-label-text">Webhook</span>
+                                            </label>
+                                            <div class="channel-actions">
+                                                <button type="button" class="channel-action-btn edit-btn" data-channel="webhook" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="channel-action-btn delete-btn" data-channel="webhook" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="webhook-fields" class="channel-input-fields" style="display: none;">
+                                            <label for="custom-webhook" class="input-label">Webhook Endpoint URL</label>
+                                            <input type="url" id="custom-webhook" placeholder="https://your-webhook-endpoint.com/alerts" class="channel-input">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="retry-count" style="font-size: 11px;">Retry Count</label>
+                                <div class="number-input-compact">
+                                    <button type="button" onclick="this.nextElementSibling.stepDown()">-</button>
+                                    <input type="number" id="retry-count" min="0" value="0">
+                                    <button type="button" onclick="this.previousElementSibling.stepUp()">+</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="request-timeout" style="font-size: 11px;">Request Timeout: <span id="timeout-value">30s</span></label>
+                                <input type="range" id="request-timeout" min="1" max="60" value="30" class="slider-input">
+                                <div class="slider-labels-compact">
+                                    <span>1s</span>
+                                    <span>15s</span>
+                                    <span>30s</span>
+                                    <span>45s</span>
+                                    <span>60s</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="alert-threshold" style="font-size: 11px;">Alert Threshold</label>
+                                <select id="alert-threshold">
+                                    <option value="1">After 1 failure</option>
+                                    <option value="3">After 3 failures</option>
+                                    <option value="5">After 5 failures</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 4: Visualization Settings -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Step 4: Visualization Settings</div>
+                        <div class="accordion-content visualization-settings">
+                            <div class="form-group">
+                                <label style="font-size: 11px; margin-bottom: 6px; display: block;">Select Charts to Display</label>
+                                <div class="chart-checkboxes">
+                                    <label class="chart-checkbox-item">
+                                        <input type="checkbox" name="charts-to-track" value="RESPONSE_TIME" checked>
+                                        <span>Response Time</span>
+                                    </label>
+                                    <label class="chart-checkbox-item">
+                                        <input type="checkbox" name="charts-to-track" value="STATUS_CODES" checked>
+                                        <span>Status Codes</span>
+                                    </label>
+                                    <label class="chart-checkbox-item">
+                                        <input type="checkbox" name="charts-to-track" value="SUCCESS_RATE" checked>
+                                        <span>Success Rate</span>
+                                    </label>
+                                    <label class="chart-checkbox-item">
+                                        <input type="checkbox" name="charts-to-track" value="DATA_LENGTH" checked>
+                                        <span>Data Length</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Step 5: Summary & Actions -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Step 5: Summary & Actions</div>
+                        <div class="accordion-content">
+                            <div id="configuration-summary" style="margin-bottom: 12px;">
+                                <!-- Read-only summary will be populated here -->
+                            </div>
+                            <div class="modal-actions-buttons">
+                                <button type="button" id="test-connection-btn" class="btn btn-secondary">Test Connection</button>
+                                <button type="submit" id="save-monitor-btn" class="btn btn-primary">Save Monitor</button>
+                                <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Inline Credential Management Modal -->
+    <div id="inline-credential-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="inline-credential-modal-title">Manage Credentials</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <form id="inline-credential-form">
+                <input type="hidden" id="inline-credential-id">
+                <div class="form-group">
+                    <label for="inline-credential-name">Name</label>
+                    <input type="text" id="inline-credential-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="inline-credential-grant-type">Grant Type</label>
+                    <select id="inline-credential-grant-type">
+                        <option value="password_credentials">Password Grant</option>
+                        <option value="client_credentials">Client Credentials</option>
+                    </select>
+                </div>
+                <div id="inline-password-grant-fields">
+                    <div class="form-group">
+                        <label for="inline-credential-client-id-pg">Client ID</label>
+                        <input type="text" id="inline-credential-client-id-pg">
+                    </div>
+                    <div class="form-group">
+                        <label for="inline-credential-username">Username</label>
+                        <input type="text" id="inline-credential-username">
+                    </div>
+                    <div class="form-group">
+                        <label for="inline-credential-password">Password</label>
+                        <input type="password" id="inline-credential-password">
+                    </div>
+                </div>
+                <div id="inline-client-credentials-fields" style="display: none;">
+                    <div class="form-group">
+                        <label for="inline-credential-client-id-cc">Client ID</label>
+                        <input type="text" id="inline-credential-client-id-cc">
+                    </div>
+                    <div class="form-group">
+                        <label for="inline-credential-client-secret">Client Secret</label>
+                        <input type="password" id="inline-credential-client-secret">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="inline-credential-token-url">Token URL</label>
+                    <input type="url" id="inline-credential-token-url" required>
+                </div>
+                <div class="form-group">
+                    <label for="inline-credential-scopes">Scopes (comma-separated)</label>
+                    <input type="text" id="inline-credential-scopes">
+                </div>
+                <button type="submit" class="btn-primary">Save Credential</button>
+            </form>
+            <div class="credentials-table-container" style="margin-top: 20px;">
+                <table class="credentials-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inline-credentials-tbody">
+                        <!-- Credential rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Drawer -->
+    <div id="details-drawer" class="drawer">
+        <div class="drawer-header">
+            <h2 id="drawer-title">Monitor Details</h2>
+            <span class="close-btn">&times;</span>
+        </div>
+        <div class="drawer-content">
+            <!-- Charts and details will be populated here -->
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-sparkline@1"></script>
+    <script src="synthetic.js"></script>
+    <script src="sidebar.js"></script>
+</body>
+</html>

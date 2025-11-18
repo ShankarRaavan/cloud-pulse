@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Pulse 360 - Cloud Integration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="aws_dashboard.css">
+    <style>
+        .sidebar {
+            background: linear-gradient(180deg, #1a202c, #2d3748);
+            transition: width 0.3s ease-in-out;
+        }
+        .sidebar-item:hover .icon-glow {
+            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+        }
+        .sidebar-item.active {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-left: 3px solid #3b82f6;
+        }
+        .brand-logo-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            border-radius: 0.75rem;
+            background-image: radial-gradient(circle at center, rgba(22, 163, 240, 0.15) 0%, rgba(22, 163, 240, 0) 70%);
+            filter: blur(1rem);
+        }
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        .form-help {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        .form-help-section {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #374151;
+        }
+        .form-help-section h4 {
+            color: #3b82f6;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .form-help-section ol {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-left: 1rem;
+        }
+        .form-help-section li {
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-800 text-gray-100">
+<div class="flex h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar-placeholder"></div>
+    
+    <!-- Main Content -->
+    <div id="main-content" class="ml-64 transition-all duration-300 flex-1 flex flex-col overflow-hidden">
+        <main class="dashboard-main flex-1 overflow-y-auto p-6">
+            <h1 class="main-title">Cloud Integration</h1>
+            <div class="cloud-provider-grid">
+                <div class="provider-card" id="aws-card">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg" alt="AWS Logo">
+                    <div class="provider-card-actions">
+                        <button id="add-aws-btn" class="btn-primary">Add Credentials</button>
+                        <div id="aws-actions-container" style="display: none;">
+                            <button id="edit-aws-btn" class="btn-icon">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <button id="delete-aws-btn" class="btn-icon">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="provider-card" id="azure-card">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a8/Microsoft_Azure_Logo.svg" alt="Azure Logo">
+                    <div class="provider-card-actions">
+                        <button id="add-azure-btn" class="btn-primary">Add Credentials</button>
+                        <div id="azure-actions-container" style="display: none;">
+                            <button id="edit-azure-btn" class="btn-icon">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <button id="delete-azure-btn" class="btn-icon">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="provider-card disabled">
+                    <img src="https://www.vectorlogo.zone/logos/google_cloud/google_cloud-icon.svg" alt="GCP Logo">
+                    <span>(Coming Soon)</span>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal for AWS Credentials -->
+<div id="aws-credentials-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>AWS Credentials</h2>
+        <form id="credentials-form">
+            <div class="form-group">
+                <label for="aws-access-key-id">AWS Access Key ID</label>
+                <input type="password" id="aws-access-key-id" required>
+            </div>
+            <div class="form-group">
+                <label for="aws-secret-access-key">AWS Secret Access Key</label>
+                <input type="password" id="aws-secret-access-key" required>
+            </div>
+            <div class="form-group">
+                <label for="aws-default-region">AWS Default Region</label>
+                <select id="aws-default-region" required>
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <button type="submit" class="btn-primary">Save Credentials</button>
+        </form>
+        <p id="credentials-error" class="error-message"></p>
+    </div>
+</div>
+
+<!-- Modal for Azure Credentials -->
+<div id="azure-credentials-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>Azure Credentials</h2>
+        <div class="status-indicator" id="azure-modal-status" style="display: none;">
+            <span class="status-dot"></span>
+            <span>Status: <span id="azure-status-text">Unknown</span></span>
+        </div>
+        <form id="azure-credentials-form">
+            <div class="form-group">
+                <label for="azure-tenant-id">Tenant ID</label>
+                <input type="text" id="azure-tenant-id" required placeholder="e.g., 12345678-1234-1234-1234-123456789abc">
+                <small class="form-help">Your Azure Active Directory tenant ID</small>
+            </div>
+            <div class="form-group">
+                <label for="azure-client-id">Client ID (Application ID)</label>
+                <input type="text" id="azure-client-id" required placeholder="e.g., 87654321-4321-4321-4321-cba987654321">
+                <small class="form-help">Service principal application ID</small>
+            </div>
+            <div class="form-group">
+                <label for="azure-client-secret">Client Secret</label>
+                <input type="password" id="azure-client-secret" required>
+                <small class="form-help">Service principal client secret</small>
+            </div>
+            <div class="form-group">
+                <label for="azure-subscription-dropdown">Subscription Selection</label>
+                <div class="subscription-container">
+                    <div class="custom-dropdown" id="subscription-dropdown">
+                        <div class="dropdown-header" id="dropdown-header">
+                            <span id="dropdown-placeholder">Loading subscriptions...</span>
+                            <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="6,9 12,15 18,9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="dropdown-content" id="dropdown-content" style="display: none;">
+                            <div class="dropdown-item select-all-item">
+                                <label class="subscription-checkbox-label">
+                                    <input type="checkbox" id="select-all-subscriptions" class="subscription-checkbox">
+                                    <span class="subscription-checkmark"></span>
+                                    <div class="subscription-content">
+                                        <span class="subscription-text">Select All Subscriptions</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div id="subscription-options">
+                                <!-- Options will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div id="subscription-loading" class="loading-indicator">
+                        <span>🔄 Loading subscriptions...</span>
+                    </div>
+                    <div id="subscription-error" class="error-message" style="display: none;"></div>
+                </div>
+                <div id="selected-subscriptions-display" class="selected-items"></div>
+                <small class="form-help">Select one or more Azure subscriptions for cost management</small>
+            </div>
+            <div class="form-group">
+                <small class="form-help">✅ Connection will be tested automatically after saving</small>
+            </div>
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <button type="submit" class="btn-primary">Save Azure Credentials</button>
+                <button type="button" id="test-azure-connection-btn" class="btn-secondary">Test Connection</button>
+            </div>
+        </form>
+        <p id="azure-credentials-error" class="error-message"></p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="aws_dashboard.js"></script>
+<script src="sidebar.js"></script>
+</body>
+</html>

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alert Management - Cloud Pulse 360</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="alert_management.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Sidebar -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="ml-64 transition-all duration-300 p-4">
+        <!-- Top Navigation -->
+        <div class="alert-header flex justify-between items-center mb-4">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-bell text-red-500" style="font-size: 1.5rem;"></i>
+                <h1>Alert Management System</h1>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="active-alerts-badge pulse-animation">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="active-alerts-count">0 Active Alerts</span>
+                </div>
+                <button id="refresh-alerts" class="refresh-btn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Alert Management Tabs -->
+        <div class="mb-4">
+            <div class="dashboard-box" style="background-color: #2d3748; border: 1px solid #4a5568; border-radius: 0.5rem; padding: 0.75rem;">
+                <div class="border-b border-gray-600 pb-3 mb-3">
+                    <nav class="flex gap-4">
+                        <button class="tab-button active" data-tab="configurations">
+                            <i class="fas fa-cog"></i> Alert Configurations
+                        </button>
+                        <button class="tab-button" data-tab="history">
+                            <i class="fas fa-history"></i> Alert History
+                        </button>
+                        <button class="tab-button" data-tab="channels">
+                            <i class="fas fa-paper-plane"></i> Notification Channels
+                        </button>
+                        <button class="tab-button" data-tab="test">
+                            <i class="fas fa-flask"></i> Test Alerts
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+            <!-- Alert Configurations Tab -->
+            <div id="configurations-tab" class="tab-content">
+                <div class="dashboard-box" style="background-color: #2d3748; border: 1px solid #4a5568; border-radius: 0.5rem; padding: 1rem;">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 style="font-size: 0.875rem; font-weight: 700; color: #63b3ed; margin: 0;">Alert Configurations</h2>
+                        <button id="create-alert-btn" class="create-alert-btn">
+                            <i class="fas fa-plus"></i> Create New Alert
+                        </button>
+                    </div>
+                    
+                    <div id="alert-configurations-list">
+                        <!-- Alert configurations will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert History Tab -->
+            <div id="history-tab" class="tab-content hidden">
+                <div class="dashboard-box" style="background-color: #2d3748; border: 1px solid #4a5568; border-radius: 0.5rem; padding: 1rem;">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 style="font-size: 0.875rem; font-weight: 700; color: #63b3ed; margin: 0;">Alert History</h2>
+                        <div class="flex gap-2">
+                            <select id="severity-filter" class="form-select">
+                                <option value="">All Severities</option>
+                                <option value="critical">Critical</option>
+                                <option value="warning">Warning</option>
+                                <option value="info">Info</option>
+                            </select>
+                            <button id="clear-history-btn" class="btn-compact btn-danger">
+                                <i class="fas fa-trash"></i> Clear History
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="alert-history-list">
+                        <!-- Alert history will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Channels Tab -->
+            <div id="channels-tab" class="tab-content hidden">
+                <div class="dashboard-box">
+                    <h2 class="text-xl font-bold mb-6">Notification Channels</h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Email Configuration -->
+                        <div class="bg-gray-800 border border-gray-600 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold mb-4 flex items-center" style="color: #63b3ed;">
+                                <i class="fas fa-envelope text-blue-400 mr-2"></i>
+                                Email Configuration
+                            </h3>
+                            <form id="email-config-form" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">SMTP Host</label>
+                                    <input type="text" id="email-host" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="smtp.gmail.com">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">SMTP Port</label>
+                                    <input type="number" id="email-port" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="587">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                    <input type="text" id="email-user" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                    <input type="password" id="email-password" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="email-secure" class="mr-2">
+                                    <label for="email-secure" class="text-sm text-gray-700">Use Secure Connection (TLS)</label>
+                                </div>
+                                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                                    <i class="fas fa-save mr-2"></i>Save Configuration
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Slack Configuration -->
+                        <div class="bg-gray-800 border border-gray-600 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold mb-4 flex items-center" style="color: #63b3ed;">
+                                <i class="fab fa-slack text-purple-400 mr-2"></i>
+                                Slack Integration
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
+                                    <input type="url" id="slack-webhook" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="https://hooks.slack.com/services/...">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Channel</label>
+                                    <input type="text" id="slack-channel" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="#alerts">
+                                </div>
+                                <button id="test-slack-btn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg">
+                                    <i class="fas fa-paper-plane mr-2"></i>Test Slack
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Alerts Tab -->
+            <div id="test-tab" class="tab-content hidden">
+                <div class="dashboard-box">
+                    <h2 class="text-xl font-bold mb-6">Test Alert System</h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                        <button id="test-critical-alert" class="bg-red-500 hover:bg-red-600 text-white px-6 py-8 rounded-lg text-center transform hover:scale-105 transition-all">
+                            <i class="fas fa-exclamation-triangle text-3xl mb-3 block"></i>
+                            <div class="font-semibold text-lg">Test Critical Alert</div>
+                            <div class="text-sm opacity-90 mt-1">High severity test</div>
+                        </button>
+                        
+                        <button id="test-warning-alert" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-8 rounded-lg text-center transform hover:scale-105 transition-all">
+                            <i class="fas fa-exclamation-circle text-3xl mb-3 block"></i>
+                            <div class="font-semibold text-lg">Test Warning Alert</div>
+                            <div class="text-sm opacity-90 mt-1">Medium severity test</div>
+                        </button>
+                        
+                        <button id="test-info-alert" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-8 rounded-lg text-center transform hover:scale-105 transition-all">
+                            <i class="fas fa-info-circle text-3xl mb-3 block"></i>
+                            <div class="font-semibold text-lg">Test Info Alert</div>
+                            <div class="text-sm opacity-90 mt-1">Low severity test</div>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-800 border border-gray-600 rounded-lg p-6">
+                        <h3 class="font-semibold mb-3" style="color: #63b3ed;">Test Results</h3>
+                        <div id="test-results" class="text-sm text-gray-400">
+                            Click any test button above to simulate an alert and verify your notification channels.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Alert Modal -->
+    <div id="create-alert-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center" style="margin-bottom: 1.25rem;">
+                <h2 class="modal-header" style="margin: 0; padding: 0; border: none;">
+                    <i class="fas fa-bell" style="color: #3b82f6;"></i>
+                    Create New Alert Configuration
+                </h2>
+                <button id="close-modal" class="text-gray-400 hover:text-white" style="font-size: 1.25rem; background: none; border: none; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 0.25rem; transition: all 0.2s;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="alert-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Basic Information Section -->
+                <div style="background-color: #1a202c; padding: 1rem; border-radius: 0.5rem; border: 1px solid #374151;">
+                    <h3 style="font-size: 0.813rem; font-weight: 700; color: #3b82f6; margin: 0 0 0.75rem 0; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <i class="fas fa-info-circle"></i> Basic Information
+                    </h3>
+                    <div class="form-group">
+                        <label class="form-label">Alert Name *</label>
+                        <input type="text" id="alert-name" required class="form-input" placeholder="e.g., High CPU Usage Alert">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Description</label>
+                        <textarea id="alert-description" class="form-textarea" rows="2" placeholder="Optional description of when this alert should trigger"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Alert Conditions Section -->
+                <div style="background-color: #1a202c; padding: 1rem; border-radius: 0.5rem; border: 1px solid #374151;">
+                    <h3 style="font-size: 0.938rem; font-weight: 700; color: #e2e8f0; margin: 0 0 1rem 0;">
+                        <i class="fas fa-bell"></i> Alert Conditions *
+                    </h3>
+                    
+                    <!-- Metric Selection -->
+                    <div class="form-group">
+                        <label class="form-label">Select Metric *</label>
+                        <select id="alert-metric" class="form-select" required>
+                            <option value="">Select a metric</option>
+                            <option value="CPUUtilization">CPU Utilization (%)</option>
+                            <option value="MemoryUtilization">Memory Utilization (%)</option>
+                            <option value="DiskReadBytes">Disk Read (Bytes)</option>
+                            <option value="DiskWriteBytes">Disk Write (Bytes)</option>
+                            <option value="NetworkIn">Network In (Bytes)</option>
+                            <option value="NetworkOut">Network Out (Bytes)</option>
+                            <option value="ResponseTime">Response Time (ms)</option>
+                            <option value="ErrorRate">Error Rate (%)</option>
+                        </select>
+                    </div>
+
+                    <!-- Threshold Operator -->
+                    <div class="form-group">
+                        <label class="form-label">Trigger Alert When Metric Is *</label>
+                        <select id="threshold-operator" class="form-select" required>
+                            <option value=">" selected>Greater than (&gt;)</option>
+                            <option value=">=">Greater than or equal (≥)</option>
+                            <option value="<">Less than (&lt;)</option>
+                            <option value="<=">Less than or equal (≤)</option>
+                            <option value="==">Equal to (=)</option>
+                            <option value="!=">Not equal to (≠)</option>
+                        </select>
+                    </div>
+
+                    <!-- Dual Threshold System -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <!-- Critical Threshold -->
+                        <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%); padding: 1rem; border-radius: 0.5rem; border: 2px solid #dc2626;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <i class="fas fa-exclamation-triangle" style="color: #dc2626; font-size: 1.25rem;"></i>
+                                <label style="font-size: 0.875rem; font-weight: 700; color: #fca5a5; margin: 0;">Critical Threshold *</label>
+                            </div>
+                            <input type="number" id="critical-threshold" class="form-input" placeholder="e.g., 90" step="0.01" required style="background-color: #1a202c; border-color: #dc2626;">
+                            <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; margin-bottom: 0;">Triggers immediate critical alert</p>
+                        </div>
+
+                        <!-- Warning Threshold -->
+                        <div style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); padding: 1rem; border-radius: 0.5rem; border: 2px solid #f97316;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <i class="fas fa-exclamation-circle" style="color: #f97316; font-size: 1.25rem;"></i>
+                                <label style="font-size: 0.875rem; font-weight: 700; color: #fdba74; margin: 0;">Warning Threshold</label>
+                            </div>
+                            <input type="number" id="warning-threshold" class="form-input" placeholder="e.g., 75 (optional)" step="0.01" style="background-color: #1a202c; border-color: #f97316;">
+                            <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; margin-bottom: 0;">Early warning before critical</p>
+                        </div>
+                    </div>
+
+                    <!-- Evaluation Settings -->
+                    <div style="background-color: #0f172a; padding: 1rem; border-radius: 0.5rem; border: 1px solid #334155; margin-bottom: 1rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: #94a3b8; margin: 0 0 0.75rem 0;">
+                            <i class="fas fa-clock"></i> Evaluation Settings
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label class="form-label">Evaluation Window</label>
+                                <select id="evaluation-window" class="form-select">
+                                    <option value="1">Last 1 minute</option>
+                                    <option value="5" selected>Last 5 minutes</option>
+                                    <option value="10">Last 10 minutes</option>
+                                    <option value="15">Last 15 minutes</option>
+                                    <option value="30">Last 30 minutes</option>
+                                    <option value="60">Last 1 hour</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Data Points to Alert</label>
+                                <select id="data-points" class="form-select">
+                                    <option value="1/1" selected>1 of 1 (immediate)</option>
+                                    <option value="2/2">2 of 2 (2 consecutive)</option>
+                                    <option value="3/3">3 of 3 (3 consecutive)</option>
+                                    <option value="3/5">3 of 5 (reduce noise)</option>
+                                    <option value="4/5">4 of 5 (very stable)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Options Toggle -->
+                    <button type="button" id="toggle-advanced-conditions" class="btn-text" style="width: 100%; text-align: left; padding: 0.75rem; background-color: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; color: #3b82f6; font-weight: 600; margin-bottom: 1rem;">
+                        <i class="fas fa-chevron-right" id="advanced-icon"></i> Advanced Options
+                    </button>
+
+                    <!-- Advanced Options Content -->
+                    <div id="advanced-conditions-content" style="display: none; background-color: #0f172a; padding: 1rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                        <div class="form-group">
+                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="alert-no-data" style="width: 1.125rem; height: 1.125rem; cursor: pointer; accent-color: #3b82f6;">
+                                <span style="color: #e2e8f0;">Alert when data is missing for more than 10 minutes</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="auto-resolve" checked style="width: 1.125rem; height: 1.125rem; cursor: pointer; accent-color: #10b981;">
+                                <span style="color: #e2e8f0;">Auto-resolve when metric returns to normal</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Recovery Threshold (Optional)</label>
+                            <input type="number" id="recovery-threshold" class="form-input" placeholder="e.g., 70 (different from alert threshold)" step="0.01">
+                            <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem;">Metric must drop below this value to resolve alert</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notification Channels Section -->
+                <div style="background-color: #1a202c; padding: 1rem; border-radius: 0.5rem; border: 1px solid #374151;">
+                    <h3 style="font-size: 0.938rem; font-weight: 700; color: #e2e8f0; margin: 0 0 1rem 0;">
+                        <i class="fas fa-paper-plane"></i> Notification Channels *
+                    </h3>
+                    
+                    <div id="notifications-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div class="notification-row" style="border: 2px solid #475569; border-radius: 0.5rem; padding: 1.25rem; background-color: #1e293b;">
+                            <div style="display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 1rem;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; font-size: 0.875rem; color: #cbd5e0; margin-bottom: 0.5rem; font-weight: 600;">
+                                        <i class="fas fa-bell"></i> Channel Type:
+                                    </label>
+                                    <select class="notification-type form-select" style="padding: 0.75rem 1rem; font-size: 0.938rem; height: 48px;">
+                                        <option value="email">📧 Email</option>
+                                        <option value="slack">💬 Slack</option>
+                                        <option value="teams">👥 Microsoft Teams</option>
+                                        <option value="webhook">🔗 Webhook</option>
+                                        <option value="pagerduty">📟 PagerDuty</option>
+                                        <option value="sms">📱 SMS</option>
+                                    </select>
+                                </div>
+                                <button type="button" class="remove-notification" style="height: 48px; width: 48px; background-color: #dc2626; color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 1.125rem; transition: all 0.2s;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="notification-config">
+                                <!-- Dynamic configuration will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="add-notification" class="btn-compact btn-primary" style="margin-top: 1rem; padding: 0.75rem 1.5rem; font-size: 0.938rem;">
+                        <i class="fas fa-plus"></i> Add Another Channel
+                    </button>
+
+                    <!-- Notification Settings -->
+                    <div style="background-color: #0f172a; padding: 1rem; border-radius: 0.5rem; border: 1px solid #334155; margin-top: 1rem;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; color: #94a3b8; margin: 0 0 0.75rem 0;">
+                            <i class="fas fa-cog"></i> Notification Settings
+                        </h4>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Notification Frequency</label>
+                            <select id="notification-frequency" class="form-select">
+                                <option value="once" selected>Alert once (no re-notification)</option>
+                                <option value="10">Re-notify every 10 minutes</option>
+                                <option value="30">Re-notify every 30 minutes</option>
+                                <option value="60">Re-notify every 1 hour</option>
+                                <option value="240">Re-notify every 4 hours</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="notify-recovery" checked style="width: 1.125rem; height: 1.125rem; cursor: pointer; accent-color: #10b981;">
+                                <span style="color: #e2e8f0;">Send recovery notification when alert resolves</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Message Template Section -->
+                <div style="background-color: #1a202c; padding: 1rem; border-radius: 0.5rem; border: 1px solid #374151;">
+                    <h3 style="font-size: 0.938rem; font-weight: 700; color: #e2e8f0; margin: 0 0 1rem 0;">
+                        <i class="fas fa-envelope"></i> Alert Message Template
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Alert Title Template</label>
+                        <input type="text" id="alert-title-template" class="form-input" placeholder="e.g., 🚨 {{metric}} Alert on {{resource}}" value="🚨 {{alert_name}} - {{metric}} {{operator}} {{threshold}}">
+                        <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem;">Available variables: {{alert_name}}, {{metric}}, {{value}}, {{threshold}}, {{resource}}, {{operator}}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Alert Message Body</label>
+                        <textarea id="alert-message-template" class="form-textarea" rows="5" placeholder="Custom alert message...">Alert Details:
+• Resource: {{resource}}
+• Metric: {{metric}}
+• Current Value: {{value}}
+• Threshold: {{threshold}}
+• Time: {{timestamp}}
+
+Action Required: Please investigate immediately.</textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Recovery Message (Optional)</label>
+                        <textarea id="recovery-message-template" class="form-textarea" rows="3" placeholder="Message when alert recovers...">✅ Alert Resolved: {{metric}} on {{resource}} has returned to normal ({{value}}).</textarea>
+                    </div>
+                </div>
+
+                <!-- Priority and Tags Section -->
+                <div style="background-color: #1a202c; padding: 1rem; border-radius: 0.5rem; border: 1px solid #374151;">
+                    <h3 style="font-size: 0.938rem; font-weight: 700; color: #e2e8f0; margin: 0 0 1rem 0;">
+                        <i class="fas fa-tags"></i> Priority & Tags
+                    </h3>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Priority Level</label>
+                            <select id="alert-priority" class="form-select">
+                                <option value="P1">🔴 P1 - Critical (Immediate action)</option>
+                                <option value="P2" selected>🟠 P2 - High (Within 1 hour)</option>
+                                <option value="P3">🟡 P3 - Medium (Within 4 hours)</option>
+                                <option value="P4">🔵 P4 - Low (Within 24 hours)</option>
+                                <option value="P5">⚪ P5 - Informational</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Environment</label>
+                            <select id="alert-environment" class="form-select">
+                                <option value="">Select environment</option>
+                                <option value="production">🔴 Production</option>
+                                <option value="staging">🟡 Staging</option>
+                                <option value="development">🟢 Development</option>
+                                <option value="testing">🔵 Testing</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 1rem; margin-bottom: 0;">
+                        <label class="form-label">Custom Tags (comma-separated)</label>
+                        <input type="text" id="alert-tags" class="form-input" placeholder="e.g., team:devops, service:api, region:us-east-1">
+                        <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem;">Tags help organize and filter alerts</p>
+                    </div>
+                </div>
+                
+                <!-- Enable/Disable Section -->
+                <div style="background-color: #1a202c; padding: 0.875rem 1rem; border-radius: 0.5rem; border: 1px solid #374151; display: flex; align-items: center; gap: 0.75rem;">
+                    <input type="checkbox" id="alert-enabled" checked style="width: 1.125rem; height: 1.125rem; cursor: pointer; accent-color: #10b981;">
+                    <label for="alert-enabled" style="margin: 0; font-size: 0.813rem; color: #e2e8f0; font-weight: 500; cursor: pointer;">
+                        <i class="fas fa-power-off" style="color: #10b981; margin-right: 0.375rem;"></i>
+                        Enable this alert configuration
+                    </label>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex justify-end gap-3" style="padding-top: 1rem; border-top: 2px solid #374151; margin-top: 0.5rem;">
+                    <button type="button" id="cancel-alert" class="btn-compact btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn-compact btn-success">
+                        <i class="fas fa-save"></i> Create Alert
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="sidebar.js"></script>
+    <script src="alert_management.js"></script>
+</body>
+</html>

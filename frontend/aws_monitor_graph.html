@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Graph - Cloud Pulse 360</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom/dist/chartjs-plugin-zoom.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="aws_monitor_graph.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Sidebar -->
+    <div id="sidebar-placeholder"></div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="ml-64 transition-all duration-300 flex flex-col overflow-hidden">
+        <main class="flex-1 overflow-y-auto" style="padding: 0.75rem 1rem;">
+            <!-- Header Section -->
+            <div class="flex justify-between items-center" style="margin-bottom: 0.75rem;">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-chart-line text-green-400 header-icon"></i>
+                    <div>
+                        <h1 id="monitor-name-header" class="header-title text-white">Loading Monitor...</h1>
+                        <p id="monitor-details-subheader" class="header-subtitle">Detailed metric timeline</p>
+                    </div>
+                </div>
+                <button id="back-to-monitors" class="btn-compact bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-professional">
+                    Back to Monitors
+                </button>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="controls-container flex justify-between items-center" style="margin-bottom: 0.75rem;">
+                <div class="time-filters flex items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <label class="text-gray-400 card-title" style="margin: 0;">Time Period:</label>
+                        <select id="time-period-dropdown" class="time-period-select bg-gray-800 border border-gray-700 rounded-lg text-white">
+                            <option value="5m">5 minutes</option>
+                            <option value="15m">15 minutes</option>
+                            <option value="45m">45 minutes</option>
+                            <option value="1h" selected>1 hour</option>
+                            <option value="4h">4 hours</option>
+                            <option value="6h">6 hours</option>
+                            <option value="12h">12 hours</option>
+                            <option value="24h">24 hours</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div id="custom-date-range" class="date-range-inputs flex items-center gap-2" style="display: none;">
+                        <input type="datetime-local" id="from-date" class="form-input-compact bg-gray-800 border border-gray-700 rounded-lg text-white">
+                        <span class="text-gray-400" style="font-size: 0.688rem;">to</span>
+                        <input type="datetime-local" id="to-date" class="form-input-compact bg-gray-800 border border-gray-700 rounded-lg text-white">
+                        <button id="apply-date-range" class="btn-compact bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Apply</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="timezone-selector">
+                        <select id="timezone-select" class="form-select-compact bg-gray-800 border border-gray-700 rounded-lg text-white">
+                            <option value="utc">UTC</option>
+                            <option value="local">Local Time</option>
+                        </select>
+                    </div>
+                    <div class="auto-refresh flex items-center gap-2" style="font-size: 0.688rem;">
+                        <input type="checkbox" id="auto-refresh-toggle" class="h-3 w-3 text-blue-600 bg-gray-800 border-gray-700 rounded">
+                        <label for="auto-refresh-toggle" class="text-gray-400">Auto-refresh every 5m</label>
+                    </div>
+                    <button id="live-update-btn" class="btn-compact bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                        Refresh Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Controls Section -->
+            <div class="filter-controls-card" style="margin-bottom: 0.75rem;">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-database icon-xs mr-1"></i>
+                                Data Source
+                            </label>
+                            <select id="data-source-select" class="filter-select bg-gray-800 border border-gray-700 rounded-lg text-white">
+                                <option value="aws">AWS CloudWatch</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-globe icon-xs mr-1"></i>
+                                Region
+                            </label>
+                            <select id="region-select" class="filter-select bg-gray-800 border border-gray-700 rounded-lg text-white">
+                                <!-- Options will be populated by JS -->
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-server icon-xs mr-1"></i>
+                                Instance ID
+                            </label>
+                            <select id="instance-select" class="filter-select bg-gray-800 border border-gray-700 rounded-lg text-white">
+                                <!-- Options will be populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="health-indicator" id="connection-status">
+                        <span class="status-dot status-connected"></span>
+                        <span class="status-text">Connected</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-chart-area icon-md text-blue-400"></i>
+                        <h3 class="chart-header text-white">Metric Timeline</h3>
+                        <span id="last-updated" class="last-updated-badge">Last updated: --</span>
+                    </div>
+                    <div class="chart-controls">
+                        <button id="reset-zoom-btn" class="chart-tool-btn" title="Reset Zoom">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <div class="control-divider"></div>
+                        <select id="graph-type" class="graph-type-select">
+                            <option value="line">📈 Line</option>
+                            <option value="bar">📊 Bar</option>
+                            <option value="area">📉 Area</option>
+                        </select>
+                        <div class="control-divider"></div>
+                        <button id="fullscreen-btn" class="chart-tool-btn" title="Fullscreen">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                        <button id="export-csv" class="chart-tool-btn export-btn" title="Export CSV">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Chart Canvas with Loading Overlay -->
+                <div class="chart-wrapper">
+                    <div id="chart-loading" class="chart-loading" style="display: none;">
+                        <div class="spinner-large"></div>
+                        <p>Loading chart data...</p>
+                    </div>
+                    <canvas id="metric-chart"></canvas>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card-enhanced">
+                        <div class="stat-icon-wrapper stat-icon-min">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h4 class="stat-label">Minimum</h4>
+                            <p id="stat-min" class="stat-value-enhanced">-</p>
+                        </div>
+                    </div>
+                    <div class="stat-card-enhanced">
+                        <div class="stat-icon-wrapper stat-icon-max">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h4 class="stat-label">Maximum</h4>
+                            <p id="stat-max" class="stat-value-enhanced">-</p>
+                        </div>
+                    </div>
+                    <div class="stat-card-enhanced">
+                        <div class="stat-icon-wrapper stat-icon-avg">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h4 class="stat-label">Average</h4>
+                            <p id="stat-avg" class="stat-value-enhanced">-</p>
+                        </div>
+                    </div>
+                    <div class="stat-card-enhanced">
+                        <div class="stat-icon-wrapper stat-icon-current">
+                            <i class="fas fa-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h4 class="stat-label">Current</h4>
+                            <p id="stat-current" class="stat-value-enhanced">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CloudWatch Log Groups Section -->
+            <div class="chart-card" style="margin-top: 0.75rem;">
+                <div class="chart-card-header">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-file-alt icon-md text-yellow-400"></i>
+                        <h3 class="chart-header text-white">CloudWatch Log Groups</h3>
+                        <span id="log-groups-count" class="last-updated-badge">0 groups</span>
+                    </div>
+                    <div class="chart-controls">
+                        <button id="refresh-logs-btn" class="chart-tool-btn" title="Refresh Logs">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="log-groups-container" style="padding: 1rem;">
+                    <!-- Loading State -->
+                    <div id="log-groups-loading" class="flex items-center justify-center py-8" style="display: none;">
+                        <div class="spinner-large"></div>
+                        <p class="ml-3 text-gray-400">Loading log groups...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="log-groups-empty" class="text-center py-8" style="display: none;">
+                        <i class="fas fa-inbox text-gray-600" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <p class="text-gray-400">No log groups found for this resource</p>
+                        <p class="text-gray-500 text-sm mt-2">Log groups will appear here when available in CloudWatch</p>
+                    </div>
+
+                    <!-- Log Groups List -->
+                    <div id="log-groups-list" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Grid Layout -->
+            <div class="bottom-grid" style="margin-top: 0.75rem;">
+                <!-- AI Recommendations Section -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fas fa-brain icon-md text-purple-400"></i>
+                        <h3 class="section-header-enhanced">AI Recommendations</h3>
+                    </div>
+                    <div id="ai-recommendations" class="info-card-content">
+                        <div class="recommendation-placeholder">
+                            <i class="fas fa-robot" style="font-size: 2rem; color: #9ca3af; margin-bottom: 0.5rem;"></i>
+                            <p>Analyzing metrics...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert History Section -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="fas fa-bell icon-md text-yellow-400"></i>
+                        <h3 class="section-header-enhanced">Recent Alerts</h3>
+                    </div>
+                    <div id="alert-history" class="info-card-content">
+                        <div class="empty-state-compact">
+                            <i class="fas fa-check-circle" style="font-size: 1.5rem; color: #10b981;"></i>
+                            <p>No alerts triggered</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Section -->
+            <div class="quick-actions-section" style="margin-top: 0.75rem;">
+                <div class="action-card" id="alert-config-card">
+                    <div class="action-card-header">
+                        <i class="fas fa-bell-plus icon-md text-orange-400"></i>
+                        <h3 class="action-card-title">Create Alert</h3>
+                    </div>
+                    <form id="alert-form" class="action-card-form">
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label class="form-field-label">
+                                    <i class="fas fa-tag icon-xs"></i>
+                                    Alert Name
+                                </label>
+                                <input type="text" id="alert-name" required class="form-field-input" placeholder="e.g., High CPU Alert">
+                            </div>
+                            <div class="form-field">
+                                <label class="form-field-label">
+                                    <i class="fas fa-chart-line icon-xs"></i>
+                                    Threshold Value
+                                </label>
+                                <input type="number" id="alert-threshold" required class="form-field-input" placeholder="80">
+                            </div>
+                            <div class="form-field">
+                                <label class="form-field-label">
+                                    <i class="fas fa-paper-plane icon-xs"></i>
+                                    Channel
+                                </label>
+                                <select id="notification-channel" required class="form-field-input">
+                                    <option value="email">📧 Email</option>
+                                    <option value="slack">💬 Slack</option>
+                                    <option value="teams">👥 Teams</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="action-submit-btn">
+                                <i class="fas fa-plus-circle"></i>
+                                Create Alert
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Log Viewer Modal -->
+    <div id="log-viewer-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 90%; width: 1200px; max-height: 90vh;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid #374151;">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-file-alt text-yellow-400"></i>
+                    <h3 id="log-viewer-title" class="text-lg font-semibold text-white">Log Viewer</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="log-viewer-refresh" class="chart-tool-btn" title="Refresh Logs">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button id="log-viewer-download" class="chart-tool-btn" title="Download Logs">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button id="log-viewer-close" class="chart-tool-btn" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="modal-body" style="padding: 1rem; overflow-y: auto; max-height: calc(90vh - 150px);">
+                <!-- Log Controls -->
+                <div class="flex items-center gap-3 mb-4" style="flex-wrap: wrap;">
+                    <div class="flex items-center gap-2">
+                        <label class="text-gray-400 text-sm">Time Range:</label>
+                        <select id="log-time-range" class="filter-select bg-gray-800 border border-gray-700 rounded text-white text-sm">
+                            <option value="300000">Last 5 minutes</option>
+                            <option value="900000">Last 15 minutes</option>
+                            <option value="3600000" selected>Last 1 hour</option>
+                            <option value="21600000">Last 6 hours</option>
+                            <option value="86400000">Last 24 hours</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-gray-400 text-sm">Filter:</label>
+                        <input type="text" id="log-filter-input" placeholder="Search logs..." class="form-input-compact bg-gray-800 border border-gray-700 rounded text-white text-sm" style="width: 250px;">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="log-live-tail" class="h-3 w-3">
+                        <label for="log-live-tail" class="text-gray-400 text-sm">Live Tail</label>
+                    </div>
+                    <button id="apply-log-filter" class="btn-compact bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">Apply</button>
+                </div>
+
+                <!-- Log Streams Selector -->
+                <div id="log-streams-selector" class="mb-4" style="display: none;">
+                    <label class="text-gray-400 text-sm mb-2 block">Log Stream:</label>
+                    <select id="log-stream-select" class="filter-select bg-gray-800 border border-gray-700 rounded text-white text-sm w-full">
+                        <option value="">All Streams</option>
+                    </select>
+                </div>
+
+                <!-- Loading State -->
+                <div id="log-events-loading" class="flex items-center justify-center py-8" style="display: none;">
+                    <div class="spinner-large"></div>
+                    <p class="ml-3 text-gray-400">Loading log events...</p>
+                </div>
+
+                <!-- Log Events Display -->
+                <div id="log-events-container" class="bg-gray-900 rounded border border-gray-700 p-3" style="font-family: 'Courier New', monospace; font-size: 0.813rem; max-height: 500px; overflow-y: auto;">
+                    <div id="log-events-list"></div>
+                </div>
+
+                <!-- Pagination -->
+                <div id="log-pagination" class="flex items-center justify-between mt-3" style="display: none;">
+                    <button id="log-prev-page" class="btn-compact bg-gray-700 hover:bg-gray-600 text-white rounded text-sm">Previous</button>
+                    <span id="log-page-info" class="text-gray-400 text-sm"></span>
+                    <button id="log-next-page" class="btn-compact bg-gray-700 hover:bg-gray-600 text-white rounded text-sm">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidebar.js"></script>
+    <script src="aws_monitor_graph.js"></script>
+</body>
+</html>

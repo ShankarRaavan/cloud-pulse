@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Pulse 360 - Synthetic Monitor Graph</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="synthetic_graph.css">
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans">
+    <div class="flex h-screen">
+        <!-- Dynamic Sidebar Placeholder -->
+        <div id="sidebar-placeholder"></div>
+
+        <!-- Main Content -->
+        <div id="main-content" class="flex-1 ml-64 flex flex-col overflow-hidden transition-all duration-300">
+            <main class="dashboard-main flex-1 overflow-y-auto p-5">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h1 id="monitor-name-title" class="text-2xl font-bold text-white">Synthetic Monitor Graph</h1>
+                    </div>
+                    <a href="synthetic.html" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md text-sm transition">Back to Monitors</a>
+                </div>
+
+                <!-- Controls -->
+                <div class="controls-container flex justify-between items-center mb-4">
+                    <div class="time-filters flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <label class="text-gray-400 text-xs font-medium">Time Period:</label>
+                            <select id="time-period-dropdown" class="bg-gray-800 border border-gray-700 rounded-md px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="5m">5 minutes</option>
+                                <option value="15m">15 minutes</option>
+                                <option value="45m">45 minutes</option>
+                                <option value="1h" selected>1 hour</option>
+                                <option value="4h">4 hours</option>
+                                <option value="6h">6 hours</option>
+                                <option value="12h">12 hours</option>
+                                <option value="24h">24 hours</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                        <div id="custom-date-range" class="date-range-inputs flex items-center gap-2" style="display: none;">
+                            <input type="datetime-local" id="from-date" class="bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <span class="text-gray-400">to</span>
+                            <input type="datetime-local" id="to-date" class="bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button id="apply-date-range" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-md text-xs">Apply</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="timezone-selector">
+                            <select class="bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5 text-xs">
+                                <option>UTC</option>
+                                <option>Local Time</option>
+                            </select>
+                        </div>
+                        <div class="auto-refresh flex items-center gap-2 text-xs">
+                            <input type="checkbox" id="auto-refresh-toggle" class="form-checkbox h-3 w-3 text-blue-600 bg-gray-800 border-gray-700 rounded">
+                            <label for="auto-refresh-toggle">Auto-refresh every 5m</label>
+                        </div>
+                        <button id="refresh-now-btn" class="bg-gray-800 hover:bg-gray-700 text-white font-semibold px-3 py-1.5 rounded-md text-xs">Refresh Now</button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-cards grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div class="summary-card" id="avg-response-time-card">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 text-xs">Avg Response Time</span>
+                            <span class="trend-indicator text-green-500">▲ 5%</span>
+                        </div>
+                        <div id="avg-response-time" class="text-2xl font-bold"></div>
+                    </div>
+                    <div class="summary-card" id="p95-latency-card">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 text-xs">P95 Latency</span>
+                            <span class="trend-indicator text-red-500">▼ 2%</span>
+                        </div>
+                        <div id="p95-latency" class="text-2xl font-bold"></div>
+                    </div>
+                    <div class="summary-card" id="uptime-percentage-card">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 text-xs">Uptime %</span>
+                            <span class="trend-indicator text-green-500">▲ 0.1%</span>
+                        </div>
+                        <div id="uptime-percentage" class="text-2xl font-bold"></div>
+                    </div>
+                    <div class="summary-card" id="total-failures-card">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 text-xs">Failures</span>
+                            <span class="trend-indicator text-gray-500">-</span>
+                        </div>
+                        <div id="total-failures" class="text-2xl font-bold"></div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="chart-container grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="chart-box">
+                        <h3 class="text-base font-semibold mb-3">Response Time (ms)</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="responseTimeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-box">
+                        <h3 class="text-base font-semibold mb-3">Status Codes</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="statusCodeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-box">
+                        <h3 class="text-base font-semibold mb-3">Success/Failure Rate</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="successRateChart" width="215" height="170"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-box">
+                        <h3 class="text-base font-semibold mb-3">Data Length (bytes)</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="dataLengthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RCA Panel -->
+                <div class="rca-container bg-gray-800 rounded-lg p-6 mt-6">
+                    <details>
+                        <summary class="text-lg font-semibold cursor-pointer">Root Cause Analysis (RCA)</summary>
+                        <div class="mt-4">
+                            <button id="generate-rca-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm mb-4">Generate RCA</button>
+                            <div id="rca-output" class="text-gray-300"></div>
+                        </div>
+                    </details>
+                </div>
+            </main>
+
+            <!-- Floating Action Button -->
+            <button class="floating-btn fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white font-bold w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
+                <span class="text-2xl">+</span>
+            </button>
+        </div>
+    </div>
+    <script src="sidebar.js"></script>
+    <script src="synthetic_graph.js"></script>
+</body>
+</html>

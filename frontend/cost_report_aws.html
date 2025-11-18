@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cost Insights - AWS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="cost_report.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-800 text-gray-100">
+<div class="flex h-screen">
+    <!-- Dynamic Sidebar Placeholder -->
+    <div id="sidebar-placeholder"></div>
+    
+    <!-- Main Content -->
+    <div id="main-content" class="flex-1 ml-64 flex flex-col overflow-hidden transition-all duration-300">
+        <main class="dashboard-main flex-1 overflow-y-auto p-4">
+  
+  <!-- Header -->
+  <header class="flex justify-between items-center mb-4">
+    <div class="flex items-center gap-2">
+      <i class="fab fa-aws text-orange-400" style="font-size: 1.5rem;"></i>
+      <h1 style="font-size: 1.125rem; font-weight: 600; margin: 0;">AWS - Cost Insights</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="exportCsv" class="pill">Export CSV</button>
+      <button id="schedule" class="pill">Schedule</button>
+      <button id="refresh" class="pill">Refresh</button>
+    </div>
+  </header>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-6 gap-3 text-sm">
+      <select id="range" class="filter-input">
+        <option value="7d">Week</option>
+        <option value="this_month">Current Month</option>
+        <option value="30d">Daily</option>
+        <option value="last_month">Last Month</option>
+      </select>
+      <select id="region" class="filter-input"><option value="all">All Regions</option></select>
+      <select id="linked" class="filter-input"><option value="all">All Linked Accounts</option></select>
+      <input id="tag" type="text" class="filter-input" placeholder="Tag (key:value)">
+      <select id="purchase" class="filter-input"><option value="all">All Purchase Options</option></select>
+      <input id="searchBox" type="text" class="filter-input" placeholder="Search services...">
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    
+    <!-- Left Column -->
+    <div class="lg:col-span-2 flex flex-col gap-4">
+      <!-- KPIs -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="metric-card">
+          <p class="metric-title">MTD Spend</p>
+          <p id="mtdValue" class="metric-value">$0</p>
+          <p id="mtdDelta" class="metric-change positive">+0%</p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-title">Forecast EOM</p>
+          <p id="forecastValue" class="metric-value">$0</p>
+          <p id="forecastDelta" class="metric-change">vs $0</p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-title">Budget</p>
+          <p id="budgetValue" class="metric-value">$0</p>
+          <p id="budgetVariance" class="metric-change negative">0% over</p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-title">Anomalies</p>
+          <p id="anomalyCount" class="metric-value">0</p>
+          <p id="anomalyAmt" class="metric-change">($0)</p>
+        </div>
+      </div>
+      <!-- Area Chart -->
+      <div class="card">
+        <h3 id="areaChartTitle" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.75rem;">Daily Spend by Service</h3>
+        <div class="chart-container">
+          <canvas id="areaByService"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="flex flex-col gap-4">
+      <!-- Donut Chart -->
+      <div class="card">
+        <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.75rem;">Cost by Service (MTD)</h3>
+        <div class="flex items-center">
+          <div class="w-1/2 chart-container" style="height: 150px;"><canvas id="donutByService"></canvas></div>
+          <div id="legendService" class="w-1/2 text-xs space-y-1" style="font-size: 0.625rem;"></div>
+        </div>
+      </div>
+      <!-- Insights -->
+      <div class="card">
+        <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.75rem;">Insights</h3>
+        <ul id="insights" class="list-disc list-inside space-y-1" style="font-size: 0.688rem;"></ul>
+      </div>
+    </div>
+
+    <!-- Bottom Row -->
+    <div class="lg:col-span-3 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Service Table -->
+      <div class="card lg:col-span-2">
+        <h3 class="font-bold mb-4">Service Breakdown</h3>
+        <table class="w-full text-sm text-left">
+          <thead>
+            <tr class="border-b border-slate-700 text-slate-400">
+              <th class="py-2">Service</th><th>MTD</th><th>Prev MTD</th><th>Δ%</th><th>Forecast</th><th>Budget</th><th>Variance</th><th>Trend</th>
+            </tr>
+          </thead>
+          <tbody id="serviceTable"></tbody>
+        </table>
+      </div>
+      <!-- Region Heat -->
+      <div class="card">
+        <h3 class="font-bold mb-4">Region vs Day</h3>
+        <div id="regionHeat" class="grid grid-cols-5 gap-2"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const COLORS = ['#38bdf8','#fbbf24','#a78bfa','#f87171','#4ade80','#f472b6'];
+    const INR = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+    const PCT = new Intl.NumberFormat('en-IN', { style: 'percent', signDisplay:'exceptZero', minimumFractionDigits:1, maximumFractionDigits:1 });
+
+    // ==== API Fetch =======================================================
+    async function getAwsCredentials() {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await fetch('/api/aws-credentials', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                return await response.json();
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching AWS credentials:', error);
+            return null;
+        }
+    }
+
+    async function api(endpoint, payload={}){
+      const token = localStorage.getItem('token');
+      const creds = await getAwsCredentials();
+      if (!creds) {
+        console.warn('AWS credentials not found, using empty data.');
+        return null;
+      }
+
+      try {
+        const res = await fetch(`/api/aws/cost${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type':'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({...payload, ...creds})
+        });
+        if(!res.ok) throw new Error(`API error: ${res.status}`);
+        return await res.json();
+      } catch(e){
+        console.warn(`Could not fetch ${endpoint}, using empty data.`, e.message);
+        return null;
+      }
+    }
+
+    async function boot(){
+      const empty = emptyData();
+      const range = document.getElementById('range').value;
+      const region = document.getElementById('region').value;
+      
+      console.log('Fetching cost data with range:', range, 'region:', region);
+      
+      const [summary, byService, byRegion, history] = await Promise.all([
+        api('/summary', { period: range, region: region }).then(r=>{
+          console.log('Summary response:', r);
+          return r||empty.summary;
+        }),
+        api('/by-service', { period: range, region: region }).then(r=>{
+          console.log('By-service response:', r);
+          return r||empty.byService;
+        }),
+        api('/by-region', { period: range, region: region }).then(r=>{
+          console.log('By-region response:', r);
+          return r||empty.byRegion;
+        }),
+        api('/history', { period: range, region: region }).then(r=>{
+          console.log('History response:', r);
+          return r||empty.history;
+        })
+      ]);
+      
+      // Ensure we have valid data structures
+      const safeSummary = summary || empty.summary;
+      const safeByService = (byService && byService.items && byService.items.length > 0) ? byService : empty.byService;
+      const safeByRegion = (byRegion && byRegion.items && byRegion.items.length > 0) ? byRegion : empty.byRegion;
+      const safeHistory = (history && history.dates && history.dates.length > 0) ? history : empty.history;
+      
+      hydrateKpis(safeSummary);
+      renderAreaByService(safeHistory.dates, safeHistory.byService);
+      hydrateDonut(safeByService);
+      hydrateServiceTable(safeByService);
+      hydrateInsights(safeSummary, safeByService);
+      hydrateHeat(safeByRegion);
+    }
+
+    // ==== UI Hydration & Charting =========================================
+    function hydrateKpis(summary){
+      document.getElementById('mtdValue').textContent = INR.format(summary.mtdSpend);
+      document.getElementById('mtdDelta').textContent = PCT.format(summary.weekOverWeek/100);
+      document.getElementById('forecastValue').textContent = INR.format(summary.forecastEom);
+      document.getElementById('forecastDelta').textContent = `vs ${INR.format(summary.forecastEom / (1+summary.forecastChange/100))}`;
+      document.getElementById('budgetValue').textContent = INR.format(summary.budget);
+      const variance = (summary.forecastEom - summary.budget) / summary.budget;
+      document.getElementById('budgetVariance').textContent = `${PCT.format(variance)} ${variance > 0 ? 'over' : 'under'}`;
+      document.getElementById('anomalyCount').textContent = summary.anomalies.count;
+      document.getElementById('anomalyAmt').textContent = `(${INR.format(summary.anomalies.amount)})`;
+    }
+
+    let areaChart, donutChart;
+    function renderAreaByService(labels, byServiceData){
+      const range = document.getElementById('range').selectedOptions[0].text;
+      document.getElementById('areaChartTitle').textContent = `Daily Spend by Service – ${range}`;
+      const ctx = document.getElementById('areaByService').getContext('2d');
+      if (window.areaChart) {
+        window.areaChart.destroy();
+      }
+      
+      // Handle empty data
+      if (!labels || labels.length === 0 || !byServiceData || Object.keys(byServiceData).length === 0) {
+        console.warn('No data available for area chart');
+        // Create empty chart with message
+        areaChart = new Chart(ctx, {
+          type: 'line',
+          data: { labels: ['No Data'], datasets: [] },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+              x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+              y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' }, beginAtZero: true }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: false }
+            }
+          }
+        });
+        return;
+      }
+      
+      const datasets = Object.entries(byServiceData).map(([service, data], i)=>({
+        label: service,
+        data: data,
+        borderColor: COLORS[i % COLORS.length],
+        backgroundColor: `${COLORS[i % COLORS.length]}33`,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0
+      }));
+      areaChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' }, stacked: true, beginAtZero: true }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function hydrateDonut(byService){
+      const ctx = document.getElementById('donutByService').getContext('2d');
+      if (window.donutChart) {
+        window.donutChart.destroy();
+      }
+      
+      // Handle empty data
+      if (!byService || !byService.items || byService.items.length === 0) {
+        console.warn('No service data available for donut chart');
+        donutChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: { 
+            labels: ['No Data'], 
+            datasets: [{ data: [1], backgroundColor: ['#374151'], borderWidth: 0 }] 
+          },
+          options: { 
+            responsive: true, 
+            cutout: '70%', 
+            plugins: { 
+              legend: { display: false },
+              tooltip: { enabled: false }
+            } 
+          }
+        });
+        document.getElementById('legendService').innerHTML = '<div class="text-slate-400 text-sm">No service data available</div>';
+        return;
+      }
+      
+      const total = byService.items.reduce((sum, i)=> sum + i.cost, 0);
+      const labels = byService.items.map(i=>i.service);
+      const data = byService.items.map(i=>i.cost);
+      
+      donutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: COLORS, borderWidth: 0 }] },
+        options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } }
+      });
+
+      const legend = document.getElementById('legendService');
+      legend.innerHTML = '';
+      byService.items.forEach((item, i)=>{
+        const pct = total > 0 ? item.cost / total : 0;
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2';
+        row.innerHTML = `<div class="w-3 h-3 rounded-full" style="background-color:${COLORS[i%COLORS.length]}"></div> <div class="flex-1 truncate">${item.service}</div> <div class="ml-auto font-medium num">${PCT.format(pct)}</div>`;
+        legend.appendChild(row);
+      });
+    }
+
+    function hydrateServiceTable(byService){
+      const body = document.getElementById('serviceTable');
+      body.innerHTML = '';
+      
+      if (!byService || !byService.items || byService.items.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = '<td colspan="8" class="py-4 text-center text-slate-400">No service data available. Please check your AWS credentials and permissions.</td>';
+        body.appendChild(row);
+        return;
+      }
+      
+      byService.items.forEach(i=>{
+        const row = document.createElement('tr');
+        row.className = 'border-b border-slate-800 hover:bg-slate-700';
+        const delta = i.prevMtd > 0 ? (i.cost - i.prevMtd) / i.prevMtd : 0;
+        const variance = i.budget > 0 ? (i.forecastEom - i.budget) / i.budget : 0;
+        const varianceBar = `<div class="w-24 h-3 bg-slate-600 rounded-full"><div class="bar ${variance > 0 ? 'red':'green'}" style="width:${Math.min(100, Math.abs(variance)*100)}%"></div></div>`;
+        const trendSpark = i.trend && i.trend.length > 0 ? 
+          `<div class="flex items-end h-6 spark">${i.trend.map(v=>`<div style="height:${Math.max(2, v*2)}px"></div>`).join('')}</div>` : 
+          '<div class="text-slate-500 text-xs">N/A</div>';
+        row.innerHTML = `
+          <td class="py-2">${i.service}</td>
+          <td class="num">${INR.format(i.cost)}</td>
+          <td class="num">${INR.format(i.prevMtd)}</td>
+          <td class="num ${delta>0?'text-red-400':delta<0?'text-green-400':'text-slate-400'}">${delta !== 0 ? PCT.format(delta) : 'N/A'}</td>
+          <td class="num">${INR.format(i.forecastEom)}</td>
+          <td class="num">${INR.format(i.budget)}</td>
+          <td>${varianceBar}</td>
+          <td>${trendSpark}</td>
+        `;
+        body.appendChild(row);
+      });
+    }
+
+    function hydrateInsights(summary, byService){
+      const list = document.getElementById('insights');
+      const bullets = [];
+      if(summary.weekOverWeek) bullets.push(`EC2 up ${PCT.format(summary.weekOverWeek/100)} WoW due to prod autoscaling.`);
+      const topMover = byService.items.sort((a,b)=>b.cost-a.cost)[2];
+      if(topMover) bullets.push(`${topMover.service} retrieval charges spiks on Sep 29.`);
+      if(summary.unattachedEbs) bullets.push(`Unattached EBS ${INR.format(summary.unattachedEbs)} k/month.`);
+      if(summary.spCoverage!=null) bullets.push(`SP coverage ${Math.round(summary.spCoverage)}%.`);
+      if(summary.tagCoverage!=null) bullets.push(`Tag coverage ${Math.round(summary.tagCoverage)}%.`);
+      list.innerHTML = bullets.map(b=>`<li>${b}</li>`).join('');
+    }
+
+
+    function hydrateHeat(byRegion){
+      const root = document.getElementById('regionHeat');
+      root.innerHTML = '';
+      
+      if (!byRegion || !byRegion.items || byRegion.items.length === 0) {
+        root.innerHTML = '<div class="col-span-5 text-center text-slate-400 py-4">No regional data available</div>';
+        return;
+      }
+      
+      const regions = byRegion.items; // {region, pct, series[]}
+      regions.forEach(r=>{
+        const wrap = document.createElement('div');
+        wrap.className = 'flex items-center gap-2 col-span-5';
+        const cells = r.series && r.series.length > 0 ? 
+          r.series.map(v=>`<div class='h-3 w-3 rounded-sm' style='background: rgba(56,189,248,${Math.max(.1, Math.min(1, v))})'></div>`).join('') :
+          '<div class="text-slate-500 text-xs">No data</div>';
+        wrap.innerHTML = `<div class='w-20 text-xs text-slate-400 truncate' title="${r.region}">${r.region}</div><div class='flex gap-1'>${cells}</div>`;
+        root.appendChild(wrap);
+      });
+    }
+
+
+    // ==== Mock (for offline dev) ==========================================
+    function emptyData(){
+      const summary = { mtdSpend: 0, weekOverWeek: 0, forecastEom: 0, forecastChange: 0, budget: 0, anomalies: { count: 0, amount: 0 }, spCoverage: 0, tagCoverage: 0 };
+      const byService = { items: [] };
+      const byRegion = { items: [] };
+      const history = { dates: [], byService: {} };
+      return { summary, byService, byRegion, history };
+    }
+
+
+    // ==== Wire buttons =====================================================
+    document.getElementById('exportCsv').addEventListener('click', ()=>{
+      // Simple CSV of by-service donut values
+      const { byService } = emptyData(); // Replace by cached last payload in real app
+      const rows = [['Service','MTD Cost']].concat(byService.items.map(i=>[i.service, i.cost]));
+      const blob = new Blob([rows.map(r=>r.join(',')).join('\n')], {type:'text/csv'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'aws_cost_by_service.csv'; a.click();
+    });
+
+
+    async function populateRegions() {
+        const regionSelect = document.getElementById('region');
+        try {
+            const response = await fetch('/api/aws/credentials/regions', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                const regions = await response.json();
+                regionSelect.innerHTML += regions.map(r => `<option value="${r}">${r}</option>`).join('');
+            }
+        } catch (error) {
+            console.error('Error fetching regions:', error);
+        }
+    }
+
+    document.getElementById('refresh').addEventListener('click', boot);
+    document.getElementById('range').addEventListener('change', boot);
+    document.getElementById('region').addEventListener('change', boot);
+
+
+    // Init
+    populateRegions();
+    boot();
+  </script>
+        </main>
+    </div>
+</div>
+<script src="sidebar.js"></script>
+</body>
+</html>

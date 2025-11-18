@@ -1,0 +1,116 @@
+/* Register Wrapper Adjustments */
+.register-wrapper {
+    /* Use same dimensions as login wrapper */
+}
+
+.register-wrapper .form-box.register {
+    right: 0;
+    left: auto;
+    width: 50%;
+    padding: 20px 25px;
+    background: transparent;
+    border-radius: 0;
+}
+
+.register-wrapper .info-box.register-info {
+    left: 20px;
+    right: auto;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.register-wrapper .form-box h2 {
+    font-size: 22px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+/* Form Row for Side-by-Side Inputs */
+.form-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.input-box.half-width {
+    flex: 1;
+    margin: 0;
+}
+
+.register-wrapper .input-box {
+    margin: 8px 0;
+}
+
+.register-wrapper .btn {
+    margin-top: 8px;
+}
+
+.register-wrapper .switch {
+    margin-top: 12px;
+}
+
+.strength-label.weak {
+    color: #ef4444;
+}
+
+.strength-label.fair {
+    color: #f59e0b;
+}
+
+.strength-label.good {
+    color: #60a5fa;
+}
+
+.strength-label.strong {
+    color: #34d399;
+}
+
+/* Password Requirements Popup - Removed (using strength indicator instead) */
+
+/* Error Message */
+.error-message {
+    color: #ff6b6b;
+    font-size: 12px;
+    margin-top: 10px;
+    text-align: center;
+    display: none;
+    background: rgba(255, 107, 107, 0.1);
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.error-message.show {
+    display: block;
+    animation: shake 0.5s;
+}
+
+/* Responsive Design for Register Page */
+@media (max-width: 900px) {
+    .register-wrapper {
+        width: 90%;
+        max-width: 500px;
+    }
+    
+    .register-wrapper .form-box.welcome {
+        display: none;
+    }
+    
+    .register-wrapper .form-box.register {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .input-box.half-width {
+        width: 100%;
+    }
+    
+    .register-wrapper .form-box h2 {
+        font-size: 24px;
+    }
+}

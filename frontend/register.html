@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Pulse 360 - Register</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="register.css">
+</head>
+<body>
+
+<div class="animated-background"></div>
+
+<div class="container">
+    <div class="wrapper register-wrapper">
+        
+        <!-- Info Box / Side Panel -->
+        <div class="info-box register-info">
+            <div class="info-content">
+                <div class="logo-icon">☁️</div>
+                <h2>Cloud Pulse 360</h2>
+                <p class="info-text">Monitor and manage your cloud infrastructure with real-time insights and AI-powered analytics.</p>
+                <div class="signup-section">
+                    <p class="signup-text">Already have an account?</p>
+                    <button class="info-signup-btn" onclick="window.location.href='index.html'">Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Form -->
+        <div class="form-box register">
+            <h2>Create Account</h2>
+            <form id="register-form">
+                <div class="form-row">
+                    <div class="input-box half-width">
+                        <input type="text" id="firstName" name="firstName" required placeholder=" ">
+                        <label>First Name</label>
+                    </div>
+                    <div class="input-box half-width">
+                        <input type="text" id="lastName" name="lastName" required placeholder=" ">
+                        <label>Last Name</label>
+                    </div>
+                </div>
+                
+                <div class="input-box">
+                    <input type="text" id="username" name="username" required placeholder=" ">
+                    <label>Username</label>
+                </div>
+                
+                <div class="input-box">
+                    <input type="email" id="email" name="email" required placeholder=" ">
+                    <label>Email</label>
+                </div>
+                
+                <div class="input-box">
+                    <input type="password" id="password" name="password" required placeholder=" ">
+                    <label>Password</label>
+                    <span class="toggle-password" data-target="password">
+                        <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </span>
+                </div>
+                
+                <div class="input-box">
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder=" ">
+                    <label>Confirm Password</label>
+                    <span class="toggle-password" data-target="confirmPassword">
+                        <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </span>
+                </div>
+                
+                <button type="submit" class="btn">Sign Up</button>
+                
+                <p id="error-message" class="error-message"></p>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script src="register.js"></script>
+</body>
+</html>

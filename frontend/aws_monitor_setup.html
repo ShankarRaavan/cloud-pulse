@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Monitor Setup - Cloud Pulse 360</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Sidebar -->
+    <div id="sidebar-placeholder"></div>
+    
+    <!-- Main Content -->
+    <div id="main-content" class="ml-64 transition-all duration-300 p-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-white flex items-center">
+                    <i class="fab fa-aws text-orange-500 mr-3"></i>
+                    AWS Monitor Setup
+                </h1>
+                <p class="text-gray-400 mt-2">Create and configure AWS infrastructure monitors</p>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button id="test-connection-btn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-plug mr-2"></i>
+                    Test Connection
+                </button>
+                <a href="aws_infra_monitoring.html" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    View Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div id="connection-status" class="mb-6 hidden">
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div id="status-indicator" class="w-3 h-3 rounded-full mr-3"></div>
+                    <span id="status-text" class="text-gray-300"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Setup Card -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Automated Setup -->
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-magic text-purple-400 text-2xl mr-3"></i>
+                    <h3 class="text-lg font-semibold">Auto Discovery</h3>
+                </div>
+                <p class="text-gray-400 mb-4">Automatically discover and set up monitors for all your AWS resources</p>
+                <button id="auto-discover-btn" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded-lg">
+                    <i class="fas fa-search mr-2"></i>
+                    Auto Discover Resources
+                </button>
+            </div>
+
+            <!-- Manual Setup -->
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-cog text-blue-400 text-2xl mr-3"></i>
+                    <h3 class="text-lg font-semibold">Custom Monitor</h3>
+                </div>
+                <p class="text-gray-400 mb-4">Create custom monitors for specific resources with tailored settings</p>
+                <button id="create-custom-btn" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>
+                    Create Custom Monitor
+                </button>
+            </div>
+
+            <!-- Metrics Collection -->
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-database text-green-400 text-2xl mr-3"></i>
+                    <h3 class="text-lg font-semibold">Metrics Collection</h3>
+                </div>
+                <p class="text-gray-400 mb-4">Start automated metrics collection from CloudWatch</p>
+                <button id="start-collection-btn" class="w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg">
+                    <i class="fas fa-play mr-2"></i>
+                    Start Collection
+                </button>
+            </div>
+        </div>
+
+        <!-- Custom Monitor Creation Form -->
+        <div id="custom-monitor-form" class="hidden bg-gray-800 border border-gray-700 rounded-lg p-6 mb-8">
+            <h3 class="text-xl font-semibold mb-6 flex items-center">
+                <i class="fas fa-plus-circle text-blue-400 mr-2"></i>
+                Create AWS Monitor
+            </h3>
+            
+            <form id="monitor-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Monitor Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Monitor Name</label>
+                        <input type="text" id="monitor-name" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500" placeholder="e.g., Production Web Servers">
+                    </div>
+
+                    <!-- AWS Service -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">AWS Service</label>
+                        <select id="aws-service" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select AWS Service</option>
+                            <!-- Real AWS services will be dynamically loaded from your account -->
+                        </select>
+                    </div>
+
+                    <!-- Resource Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Resource Selection</label>
+                        <select id="resource-selection" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="all">All Resources</option>
+                            <option value="specific">Specific Resource</option>
+                            <option value="tags">By Tags</option>
+                        </select>
+                    </div>
+
+                    <!-- Region -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">AWS Region</label>
+                        <select id="aws-region" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="us-east-1">US East (N. Virginia)</option>
+                            <option value="us-west-2">US West (Oregon)</option>
+                            <option value="eu-west-1">Europe (Ireland)</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Resource ID (shown when specific is selected) -->
+                <div id="resource-id-field" class="hidden">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Resource ID</label>
+                    <input type="text" id="resource-id" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500" placeholder="e.g., i-1234567890abcdef0">
+                </div>
+
+                <!-- Tag Filters (shown when tags is selected) -->
+                <div id="tag-filters-field" class="hidden">
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Tag Filters</label>
+                    <div id="tag-filters-container">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <input type="text" placeholder="Tag Key" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white flex-1">
+                            <input type="text" placeholder="Tag Value" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white flex-1">
+                            <button type="button" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" id="add-tag-filter" class="text-blue-400 hover:text-blue-300 text-sm">
+                        <i class="fas fa-plus mr-1"></i>Add Tag Filter
+                    </button>
+                </div>
+
+                <!-- Metrics Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Metrics to Monitor</label>
+                    <div id="metrics-selection" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <!-- Dynamically populated based on service selection -->
+                    </div>
+                </div>
+
+                <!-- Monitoring Settings -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Collection Interval</label>
+                        <select id="collection-interval" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="300">5 minutes</option>
+                            <option value="900">15 minutes</option>
+                            <option value="3600">1 hour</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Anomaly Detection</label>
+                        <select id="anomaly-detection" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="enabled">Enabled</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Alert Threshold</label>
+                        <select id="alert-threshold" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-blue-500">
+                            <option value="0.7">70% (Low sensitivity)</option>
+                            <option value="0.8">80% (Medium sensitivity)</option>
+                            <option value="0.9">90% (High sensitivity)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancel-monitor" class="px-6 py-2 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white">
+                        <i class="fas fa-save mr-2"></i>
+                        Create Monitor
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Existing Monitors -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold flex items-center">
+                    <i class="fas fa-list text-green-400 mr-2"></i>
+                    Existing AWS Monitors
+                </h3>
+                <button id="refresh-monitors" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Refresh
+                </button>
+            </div>
+            
+            <div id="monitors-list" class="space-y-4">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-gray-800 p-6 rounded-lg flex items-center space-x-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span class="text-white">Processing...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="sidebar.js"></script>
+    <script src="aws_monitor_setup.js"></script>
+</body>
+</html>

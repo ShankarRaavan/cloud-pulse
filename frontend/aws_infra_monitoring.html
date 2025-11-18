@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Infrastructure Monitoring - Cloud Pulse 360</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="synthetic.css">
+    <link rel="stylesheet" href="aws_infra_monitoring.css">
+    <style>
+        /* Compact UI Styling */
+        #main-content {
+            font-size: 0.875rem;
+        }
+        
+        #main-content h1 {
+            font-size: 1.5rem !important;
+        }
+        
+        #main-content h2 {
+            font-size: 1.125rem !important;
+        }
+        
+        #main-content .p-6 {
+            padding: 1rem !important;
+        }
+        
+        #main-content .px-6 {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+        }
+        
+        #main-content .py-4 {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+        }
+        
+        #main-content .py-3 {
+            padding-top: 0.375rem !important;
+            padding-bottom: 0.375rem !important;
+        }
+        
+        #main-content button,
+        #main-content select,
+        #main-content input {
+            font-size: 0.875rem !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+        
+        #main-content .text-3xl {
+            font-size: 1.5rem !important;
+        }
+        
+        #main-content table {
+            font-size: 0.8125rem !important;
+        }
+        
+        #main-content th {
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.75rem !important;
+        }
+        
+        #main-content td {
+            padding: 0.5rem 0.75rem !important;
+        }
+        
+        .time-range-btn {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            background: transparent;
+            color: #9ca3af;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+        
+        .time-range-btn.active,
+        .time-range-btn:hover {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status-healthy { background-color: #10b981; }
+        .status-warning { background-color: #f59e0b; }
+        .status-critical { background-color: #ef4444; }
+        .status-unknown { background-color: #6b7280; }
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+        
+        .monitor-row:hover {
+            background-color: #374151;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Sidebar -->
+    <div id="sidebar-placeholder"></div>
+    
+    <!-- Main Content -->
+    <div id="main-content" class="ml-64 transition-all duration-300 flex flex-col overflow-hidden">
+        <main class="flex-1 overflow-y-auto">
+            <!-- Header Section -->
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center">
+                        <i class="fab fa-aws text-orange-400 text-3xl mr-3"></i>
+                        <div>
+                            <h1 class="text-3xl font-bold text-white">AWS Infrastructure Monitoring</h1>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="setup-new-monitor" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                            <i class="fas fa-plus mr-2"></i>
+                            Setup New Monitor
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AWS Monitors Table -->
+            <div class="p-6">
+                <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-700">
+                        <h2 class="text-xl font-semibold text-white flex items-center">
+                            <i class="fas fa-chart-line mr-2 text-green-400"></i>
+                            Active AWS Monitors
+                        </h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-900">
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Monitor Name</th>
+                                    <th>Resource Type</th>
+                                    <th>Metric</th>
+                                    <th>Threshold</th>
+                                    <th>Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="aws-monitors-tbody" class="bg-gray-800 divide-y divide-gray-700">
+                                <!-- Monitor rows will be inserted here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="empty-state" class="text-center py-12">
+                        <i class="fas fa-chart-line text-gray-600 text-6xl mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-400 mb-2">No AWS Monitors Configured</h3>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- AWS Monitor Creation Modal -->
+    <div id="aws-monitor-modal" class="modal" style="display: none;">
+        <div class="modal-content-lg">
+            <div class="modal-header">
+                <h2 id="modal-title">Setup AWS Monitor</h2>
+                <span class="modal-close">&times;</span>
+            </div>
+            
+            <div class="stepper">
+                <div class="step active"><span>1</span><div>Basic Config</div></div>
+                <div class="step"><span>2</span><div>Thresholds</div></div>
+                <div class="step"><span>3</span><div>Notifications</div></div>
+                <div class="step"><span>4</span><div>Advanced</div></div>
+            </div>
+            
+            <form id="aws-monitor-form">
+                <input type="hidden" id="monitor-id">
+                <div class="accordion">
+                    <!-- Step 1: Basic Configuration -->
+                    <div class="accordion-item active">
+                        <div class="accordion-header">Step 1: Basic Configuration</div>
+                        <div class="accordion-content" style="display: block;">
+                            <div class="form-group">
+                                <label for="monitor-name">Monitor Name</label>
+                                <input type="text" id="monitor-name" required placeholder="e.g., Production Web Servers CPU">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="resource-type">Resource Type</label>
+                                <select id="resource-type" required>
+                                    <option value="">Select Resource Type</option>
+                                    <option value="ec2">EC2 Instances</option>
+                                    <option value="rds">RDS Databases</option>
+                                    <option value="lambda">Lambda Functions</option>
+                                    <option value="s3">S3 Buckets</option>
+                                    <option value="elb">Load Balancers</option>
+                                    <option value="cloudfront">CloudFront Distributions</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" id="resource-selection">
+                                <label>Select Resources <span style="font-weight: normal; color: #9ca3af;">(Choose one or more)</span></label>
+                                <div id="resource-loading" class="hidden" style="padding: 8px; color: #60a5fa; background: rgba(59, 130, 246, 0.1); border: 1px solid #1e40af; border-radius: 4px; font-size: 12px;">
+                                    <i class="fas fa-spinner fa-spin mr-1"></i> Loading resources...
+                                </div>
+                                <div id="resource-list" class="hidden" style="max-height: 180px; overflow-y: auto; background: #374151; border: 1px solid #4b5563; border-radius: 4px; padding: 8px;">
+                                    <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #4b5563;">
+                                        <label style="display: flex; align-items: center; cursor: pointer; padding: 4px;">
+                                            <input type="checkbox" id="select-all-resources" style="margin-right: 8px;">
+                                            <span style="font-weight: 600;">Select All</span>
+                                        </label>
+                                    </div>
+                                    <div id="resource-checkboxes">
+                                        <!-- Resource checkboxes will be inserted here -->
+                                    </div>
+                                </div>
+                                <div id="resource-empty" style="padding: 8px; color: #9ca3af; background: rgba(55, 65, 81, 0.5); border: 1px solid #4b5563; border-radius: 4px; font-size: 12px;">
+                                    <i class="fas fa-info-circle mr-1"></i> First select resource type
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="metric-name">Metric to Monitor</label>
+                                <select id="metric-name" required>
+                                    <option value="">Select metric to monitor</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="monitoring-interval">Monitoring Interval</label>
+                                <select id="monitoring-interval" required>
+                                    <option value="300">5 minutes</option>
+                                    <option value="600">10 minutes</option>
+                                    <option value="900">15 minutes</option>
+                                    <option value="1800">30 minutes</option>
+                                    <option value="3600">1 hour</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Threshold Configuration -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Step 2: Threshold Configuration</div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="threshold-operator">Threshold Operator</label>
+                                <select id="threshold-operator" required>
+                                    <option value=">">Greater than (>)</option>
+                                    <option value=">=">Greater than or equal (>=)</option>
+                                    <option value="<">Less than (<)</option>
+                                    <option value="<=">Less than or equal (<=)</option>
+                                    <option value="==">Equal to (=)</option>
+                                    <option value="!=">Not equal to (≠)</option>
+                                </select>
+                            </div>
+
+                            <div class="threshold-grid">
+                                <div class="threshold-card threshold-critical">
+                                    <div class="threshold-label">
+                                        <svg class="threshold-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                        </svg>
+                                        <span>Critical Threshold *</span>
+                                    </div>
+                                    <input type="number" id="threshold-value" required step="0.01" placeholder="e.g., 90" class="threshold-input">
+                                    <div class="threshold-hint">Triggers immediately when crossed</div>
+                                </div>
+
+                                <div class="threshold-card threshold-warning">
+                                    <div class="threshold-label">
+                                        <svg class="threshold-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                        </svg>
+                                        <span>Warning Threshold</span>
+                                    </div>
+                                    <input type="number" id="warning-threshold" step="0.01" placeholder="e.g., 75 (optional)" class="threshold-input">
+                                    <div class="threshold-hint">Optional early warning threshold</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="evaluation-window">Evaluation Window</label>
+                                <select id="evaluation-window">
+                                    <option value="1">Last 1 minute</option>
+                                    <option value="5" selected>Last 5 minutes</option>
+                                    <option value="10">Last 10 minutes</option>
+                                    <option value="15">Last 15 minutes</option>
+                                    <option value="30">Last 30 minutes</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="data-points-required">Data Points Required</label>
+                                <select id="data-points-required">
+                                    <option value="1/1" selected>1 of 1 (immediate)</option>
+                                    <option value="2/2">2 of 2 (consecutive)</option>
+                                    <option value="3/3">3 of 3 (very stable)</option>
+                                    <option value="3/5">3 of 5 (reduce noise)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Notifications -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Step 3: Notifications</div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label style="font-size: 11px;">Notification Channels</label>
+                                
+                                <!-- Selected Channels Summary Display -->
+                                <div id="notification-channels-summary" class="notification-summary" style="display: none;">
+                                    <!-- Summary will be dynamically populated here -->
+                                </div>
+                                
+                                <button type="button" id="toggle-notification-channels" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 11px; margin-top: 6px;">
+                                    <i class="fas fa-bell"></i> Hide Channels
+                                </button>
+                                
+                                <!-- Inline Notification Channel Configuration Section -->
+                                <div id="notification-channels-inline" class="notification-channels-section">
+                                    <!-- Email Channel -->
+                                    <div class="notification-channel-item">
+                                        <div class="channel-header">
+                                            <label class="notification-checkbox-label">
+                                                <input type="checkbox" id="channel-email" class="notification-channel-checkbox" value="EMAIL" checked>
+                                                <span class="channel-icon-wrapper">
+                                                    <i class="fas fa-envelope"></i>
+                                                </span>
+                                                <span class="channel-label-text">Email</span>
+                                            </label>
+                                            <div class="channel-actions">
+                                                <button type="button" class="channel-action-btn edit-btn" data-channel="email" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="channel-action-btn delete-btn" data-channel="email" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="email-fields" class="channel-input-fields" style="display: block;">
+                                            <label for="email-recipients" class="input-label">Email Addresses (comma-separated)</label>
+                                            <input type="text" id="email-recipients" placeholder="admin@example.com, alerts@example.com" class="channel-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Slack Channel -->
+                                    <div class="notification-channel-item">
+                                        <div class="channel-header">
+                                            <label class="notification-checkbox-label">
+                                                <input type="checkbox" id="channel-slack" class="notification-channel-checkbox" value="SLACK">
+                                                <span class="channel-icon-wrapper">
+                                                    <i class="fab fa-slack"></i>
+                                                </span>
+                                                <span class="channel-label-text">Slack</span>
+                                            </label>
+                                            <div class="channel-actions">
+                                                <button type="button" class="channel-action-btn edit-btn" data-channel="slack" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="channel-action-btn delete-btn" data-channel="slack" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="slack-fields" class="channel-input-fields" style="display: none;">
+                                            <label for="slack-webhook" class="input-label">Slack Webhook URL</label>
+                                            <input type="url" id="slack-webhook" placeholder="https://hooks.slack.com/services/..." class="channel-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Microsoft Teams Channel -->
+                                    <div class="notification-channel-item">
+                                        <div class="channel-header">
+                                            <label class="notification-checkbox-label">
+                                                <input type="checkbox" id="channel-teams" class="notification-channel-checkbox" value="TEAMS">
+                                                <span class="channel-icon-wrapper">
+                                                    <i class="fab fa-microsoft"></i>
+                                                </span>
+                                                <span class="channel-label-text">Teams</span>
+                                            </label>
+                                            <div class="channel-actions">
+                                                <button type="button" class="channel-action-btn edit-btn" data-channel="teams" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="channel-action-btn delete-btn" data-channel="teams" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="teams-fields" class="channel-input-fields" style="display: none;">
+                                            <label for="teams-webhook" class="input-label">Teams Webhook URL</label>
+                                            <input type="url" id="teams-webhook" placeholder="https://outlook.office.com/webhook/..." class="channel-input">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Custom Webhook Channel -->
+                                    <div class="notification-channel-item">
+                                        <div class="channel-header">
+                                            <label class="notification-checkbox-label">
+                                                <input type="checkbox" id="channel-webhook" class="notification-channel-checkbox" value="WEBHOOK">
+                                                <span class="channel-icon-wrapper">
+                                                    <i class="fas fa-globe"></i>
+                                                </span>
+                                                <span class="channel-label-text">Webhook</span>
+                                            </label>
+                                            <div class="channel-actions">
+                                                <button type="button" class="channel-action-btn edit-btn" data-channel="webhook" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="channel-action-btn delete-btn" data-channel="webhook" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="webhook-fields" class="channel-input-fields" style="display: none;">
+                                            <label for="custom-webhook" class="input-label">Webhook Endpoint URL</label>
+                                            <input type="url" id="custom-webhook" placeholder="https://your-webhook-endpoint.com/alerts" class="channel-input">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Advanced -->
+                    <div class="accordion-item">
+                        <div class="accordion-header">Step 4: Advanced</div>
+                        <div class="accordion-content">
+                            <div class="form-group">
+                                <label for="notification-frequency">Notification Frequency</label>
+                                <select id="notification-frequency">
+                                    <option value="once">Once (no re-alert)</option>
+                                    <option value="10">Every 10 minutes</option>
+                                    <option value="30">Every 30 minutes</option>
+                                    <option value="60">Every 1 hour</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="notify-recovery" checked>
+                                    <i class="fas fa-check-circle"></i> Notify on recovery
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="alert-priority">Priority Level</label>
+                                <select id="alert-priority">
+                                    <option value="P1">🔴 P1 - Critical</option>
+                                    <option value="P2" selected>🟠 P2 - High</option>
+                                    <option value="P3">🟡 P3 - Medium</option>
+                                    <option value="P4">🔵 P4 - Low</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="monitor-tags">Tags (comma-separated)</label>
+                                <input type="text" id="monitor-tags" placeholder="e.g., production, critical, web-servers">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="alert-on-missing-data">
+                                    Alert when data is missing for 10+ minutes
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="auto-resolve-alert" checked>
+                                    Auto-resolve when metric returns to normal
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="modal-actions">
+                    <button type="submit" id="submit-btn" class="create-monitor-btn">Create Monitor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="sidebar.js"></script>
+    <script src="aws_infra_monitoring.js"></script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudPulse 360 - AI Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="agent.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-800 text-gray-100">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div id="sidebar-placeholder"></div>
+
+        <!-- Main Content -->
+        <div id="main-content" class="ml-64 transition-all duration-300 flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-gray-900 border-b border-gray-700 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-blue-400">AI Agent</h1>
+                        <p class="text-gray-400 text-sm mt-1">Intelligent SRE Assistant & Automation Engine</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="save-indicator" class="text-xs text-green-400 opacity-0 transition-opacity">
+                            <i class="fas fa-check-circle mr-1"></i>Saved
+                        </span>
+                        <button id="export-chat" class="px-3 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm" title="Export conversation">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                        <button id="clear-chat" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                            <i class="fas fa-trash-alt mr-2"></i>Clear Chat
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Agent Container -->
+            <div class="agent-container flex-1 overflow-hidden">
+                <!-- Left Sidebar: Agent Modes -->
+                <div class="agent-sidebar">
+                    <div class="p-4 border-b border-gray-700">
+                        <h2 class="text-lg font-semibold text-purple-400 mb-3">AI Agent Modes</h2>
+                    </div>
+                    <div class="quick-actions p-4">
+                        <button class="action-button active" data-agent="sre">
+                            <i class="fas fa-user-shield"></i>
+                            <span>SRE Assistant</span>
+                        </button>
+                        <button class="action-button" data-agent="monitor">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Monitor Creation</span>
+                        </button>
+                        <button class="action-button" data-agent="automation">
+                            <i class="fas fa-robot"></i>
+                            <span>Automation Agent</span>
+                        </button>
+                        <button class="action-button" data-agent="knowledge">
+                            <i class="fas fa-book"></i>
+                            <span>Knowledge Assistant</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Quick Examples -->
+                    <div class="p-4 border-t border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-400 uppercase mb-3">Quick Examples</h3>
+                        <div class="space-y-2">
+                            <button class="example-btn" data-example="Analyze EC2 CPU utilization above 80% for instance i-12345">
+                                <i class="fas fa-server text-blue-400"></i>
+                                EC2 CPU Analysis
+                            </button>
+                            <button class="example-btn" data-example="Create CPU alert for EC2 above 70%">
+                                <i class="fas fa-bell text-yellow-400"></i>
+                                Create Monitor
+                            </button>
+                            <button class="example-btn" data-example="Restart EC2 i-12345 if CPU is stuck for 10 minutes">
+                                <i class="fas fa-sync-alt text-green-400"></i>
+                                Automation Plan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center: Chat Window -->
+                <div class="chat-main">
+                    <div class="chat-window" id="chat-window">
+                        <div class="welcome-message">
+                            <div class="flex items-start gap-3">
+                                <div class="avatar agent-avatar">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="agent-message">
+                                        <h3 class="font-semibold text-purple-400 mb-2">Welcome to CloudPulse 360 AI Agent!</h3>
+                                        <p class="mb-3">I'm your intelligent SRE assistant. I can help you with:</p>
+                                        <ul class="list-disc list-inside space-y-1 text-sm">
+                                            <li><strong>SRE Analysis:</strong> Analyze metrics, detect anomalies, and provide RCA</li>
+                                            <li><strong>Monitor Creation:</strong> Generate monitoring configurations</li>
+                                            <li><strong>Automation:</strong> Design safe automation workflows</li>
+                                            <li><strong>Knowledge:</strong> Answer SRE/DevOps questions</li>
+                                        </ul>
+                                        <p class="mt-3 text-sm text-gray-400">Select an agent mode and start chatting!</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-xs text-gray-400">Active Mode:</span>
+                            <span id="active-mode" class="text-xs font-semibold text-purple-400">SRE Assistant</span>
+                        </div>
+                        <div class="chat-input">
+                            <textarea id="prompt-input" placeholder="Type your message..." rows="3"></textarea>
+                            <button id="send-button" class="send-btn">
+                                <i class="fas fa-paper-plane"></i>
+                                <span>Send</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar: Context Panel -->
+                <div class="context-panel">
+                    <div class="p-4 border-b border-gray-700">
+                        <h2 class="text-lg font-semibold text-blue-400">Context</h2>
+                    </div>
+                    <div id="context-summary" class="p-4">
+                        <div class="context-empty">
+                            <i class="fas fa-info-circle text-gray-600 text-3xl mb-2"></i>
+                            <p class="text-gray-500 text-sm">No context selected</p>
+                            <p class="text-gray-600 text-xs mt-2">Context will appear here during analysis</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Scripts -->
+    <script src="sidebar.js"></script>
+    <script src="agent.js"></script>
+</body>
+</html>
